@@ -221,41 +221,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Fast profile switcher (PRD v0.0.8: 4 perfis) */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/60">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
-              <RefreshCw className="w-3 h-3 text-teal-400" /> Trocar Perfil Demo
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-1">
-            {(['GESTOR_VENART', 'GESTOR_PROGRAMA', 'GESTOR_RH', 'OPERACAO'] as UserPerfil[]).map(
-              (p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={async () => {
-                    if (switchMockProfile) {
-                      await switchMockProfile(p)
-                      if (p === 'GESTOR_VENART' || p === 'GESTOR_PROGRAMA') navigate('/gestor')
-                      if (p === 'GESTOR_RH') navigate('/rh')
-                      if (p === 'OPERACAO') navigate('/atendente')
-                    }
-                  }}
-                  className={`text-[10px] py-1 px-1.5 rounded text-center font-medium transition truncate ${
-                    perfil === p
-                      ? 'bg-teal-500 text-white font-bold'
-                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                  }`}
-                  title={p}
-                >
-                  {p.replace('GESTOR_', '')}
-                </button>
-              ),
-            )}
-          </div>
-        </div>
-
         {/* Footer Logout */}
         <div className="p-3 border-t border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs text-slate-400">

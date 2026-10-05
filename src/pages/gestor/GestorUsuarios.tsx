@@ -66,7 +66,7 @@ export default function GestorUsuariosCrud() {
     setFormData({
       name: '',
       email: '',
-      password: '12345678',
+      password: '',
       perfil: 'OPERACAO',
       tipo_profissional: 'ENFERMEIRO',
       categoria_profissional: 'ENFERMEIRO',

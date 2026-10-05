@@ -375,7 +375,9 @@ export const UsuariosService = {
     const normalizedTipo = tipo === 'ENFERMEIRO' || tipo === 'MEDICO' ? tipo : ''
 
     const password =
-      data.password && data.password.trim().length >= 8 ? data.password.trim() : '12345678'
+      data.password && data.password.trim().length >= 8
+        ? data.password.trim()
+        : `VenArt#${Math.random().toString(36).slice(2, 6).toUpperCase()}!${Math.floor(100 + Math.random() * 900)}`
 
     const payload: Record<string, any> = {
       name: (data.name || '').trim(),
