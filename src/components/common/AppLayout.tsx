@@ -54,7 +54,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { label: 'Visão Geral (Venart)', href: '/gestor', icon: LayoutDashboard },
     { label: 'Importar Lotes', href: '/gestor/importar', icon: Upload },
     { label: 'Selecionar Elegíveis', href: '/gestor/selecionar', icon: CheckSquare },
-    { label: 'Beneficiários (1.200 vidas)', href: '/gestor/beneficiarios', icon: Users },
+    { label: 'Beneficiários', href: '/gestor/beneficiarios', icon: Users },
     { label: 'Gestão de Usuários', href: '/gestor/usuarios', icon: UserCheck },
     { label: 'Gestão de Questionários', href: '/gestor/questionarios', icon: ClipboardList },
     { label: 'Fichas de Cuidado', href: '/gestor/fichas', icon: FileText },
