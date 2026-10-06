@@ -22,20 +22,26 @@ import {
   AlertCircle,
   FileText,
   ArrowRight,
+  AlertTriangle,
 } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { getFaixaLabel } from '@/constants/faixasEtarias'
+import { formatPhone, isValidPhone11, onlyDigits } from '@/lib/phoneMask'
+import * as XLSX from 'xlsx'
 
 export default function GestorImportarPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [fileName, setFileName] = useState<string | null>(null)
   const [previewData, setPreviewData] = useState<Array<Partial<Beneficiario>>>([])
+  const [validationErrors, setValidationErrors] = useState<
+    Array<{ linha: number; matricula?: string; nome?: string; motivo: string }>
+  >([])
   const [processing, setProcessing] = useState(false)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  // Amostra mock para quando o usuário seleciona um arquivo ou clica em "Carregar Planilha Modelo"
+  // Amostra modelo com contatos de 11 dígitos formatados
   const mockSpreadsheetRows: Array<Partial<Beneficiario>> = [
     {
       id_externo: `BENEF-IMP-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -45,8 +51,8 @@ export default function GestorImportarPage() {
       tipo_vinculo: 'TITULAR',
       faixa: '06',
       faixa_etaria: '06',
-      telefone: '(11) 3344-5566',
-      celular: '(11) 97788-9900',
+      telefone: '(11) 3344-55660',
+      celular: '(11) 97788-99001',
       email: 'claudia.duarte@empresa.com.br',
       custo_12_meses: 14200,
       condicao_principal: 'Hipertensão com Resistência Medicamentosa',
@@ -62,8 +68,8 @@ export default function GestorImportarPage() {
       tipo_vinculo: 'DEPENDENTE',
       faixa: '01',
       faixa_etaria: '01',
-      telefone: '(11) 3344-5566',
-      celular: '(11) 97788-9900',
+      telefone: '(11) 3344-55660',
+      celular: '(11) 97788-99001',
       email: 'claudia.duarte@empresa.com.br',
       custo_12_meses: 4600,
       condicao_principal: 'Diabetes Mellitus Tipo 1 Infantil',
@@ -79,8 +85,8 @@ export default function GestorImportarPage() {
       tipo_vinculo: 'TITULAR',
       faixa: '08',
       faixa_etaria: '08',
-      telefone: '(41) 3456-1122',
-      celular: '(41) 98877-2233',
+      telefone: '(41) 3456-11220',
+      celular: '(41) 98877-22334',
       email: 'lucas.ribeiro@empresa.com.br',
       custo_12_meses: 9800,
       condicao_principal: 'Lombalgia Crônica com Incapacidade Funcional',
@@ -88,56 +94,120 @@ export default function GestorImportarPage() {
       permite_contato_whatsapp_sms: true,
       status: 'ELEGIVEL',
     },
-    {
-      id_externo: `BENEF-IMP-${Math.floor(1000 + Math.random() * 9000)}`,
-      nome_beneficiario: 'Renata Albuquerque Lima',
-      matricula: 'MAT-3003',
-      unidade_regiao: 'Rio de Janeiro - Filial',
-      tipo_vinculo: 'TITULAR',
-      faixa: '05',
-      faixa_etaria: '05',
-      telefone: '(21) 2233-4455',
-      celular: '(21) 99123-4567',
-      email: 'renata.albuquerque@empresa.com.br',
-      custo_12_meses: 18900,
-      condicao_principal: 'Depressão Maior Recorrente e Pânico',
-      risco: 'ALTO' as NivelRisco,
-      permite_contato_whatsapp_sms: true,
-      status: 'ELEGIVEL',
-    },
-    {
-      id_externo: `BENEF-IMP-${Math.floor(1000 + Math.random() * 9000)}`,
-      nome_beneficiario: 'Marcos Vinicius Santos',
-      matricula: 'MAT-3004',
-      unidade_regiao: 'Belo Horizonte - Operações',
-      tipo_vinculo: 'TITULAR',
-      faixa: '10',
-      faixa_etaria: '10',
-      telefone: '(31) 3211-9988',
-      celular: '(31) 98711-2233',
-      email: 'marcos.santos@empresa.com.br',
-      custo_12_meses: 27500,
-      condicao_principal: 'Insuficiência Cardíaca Congestiva NYHA II',
-      risco: 'CRITICO' as NivelRisco,
-      permite_contato_whatsapp_sms: true,
-      status: 'ELEGIVEL',
-    },
   ]
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Normalização e validação das linhas importadas
+  const processAndValidateRows = (
+    rows: Array<Partial<Beneficiario>>,
+  ): { validRows: Array<Partial<Beneficiario>>; errors: typeof validationErrors } => {
+    const validRows: Array<Partial<Beneficiario>> = []
+    const errors: typeof validationErrors = []
+
+    rows.forEach((row, idx) => {
+      const linha = idx + 1
+      const celDigits = onlyDigits(row.celular)
+      const telDigits = onlyDigits(row.telefone)
+
+      const rowErrors: string[] = []
+      if (!celDigits) {
+        rowErrors.push('Celular/WhatsApp ausente')
+      } else if (celDigits.length !== 11) {
+        rowErrors.push(`Celular/WhatsApp inválido: ${celDigits.length} dígitos (requer 11)`)
+      }
+
+      if (!telDigits) {
+        rowErrors.push('Telefone ausente')
+      } else if (telDigits.length !== 11) {
+        rowErrors.push(`Telefone inválido: ${telDigits.length} dígitos (requer 11)`)
+      }
+
+      if (rowErrors.length > 0) {
+        errors.push({
+          linha,
+          matricula: row.matricula || '—',
+          nome: row.nome_beneficiario || '—',
+          motivo: rowErrors.join(' | '),
+        })
+      } else {
+        validRows.push({
+          ...row,
+          celular: formatPhone(celDigits),
+          telefone: formatPhone(telDigits),
+        })
+      }
+    })
+
+    return { validRows, errors }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      setFileName(file.name)
-      // Carrega os dados simulados a partir da planilha
-      setPreviewData(mockSpreadsheetRows)
-      setErrorMsg(null)
-      setSuccessMsg(null)
+    if (!file) return
+
+    setFileName(file.name)
+    setErrorMsg(null)
+    setSuccessMsg(null)
+
+    try {
+      const buffer = await file.arrayBuffer()
+      const wb = XLSX.read(buffer, { type: 'array' })
+      const firstSheet = wb.SheetNames[0]
+      const ws = wb.Sheets[firstSheet]
+      const json: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' })
+
+      if (json.length === 0) {
+        setErrorMsg('Arquivo vazio ou sem dados legíveis.')
+        setPreviewData([])
+        return
+      }
+
+      // Mapear campos flexíveis do Excel
+      const rawBeneficiarios: Array<Partial<Beneficiario>> = json.map((r, i) => {
+        const matricula = String(r.matricula || r.Matricula || r.MATRICULA || `MAT-${1000 + i}`)
+        const nome = String(r.nome || r.Nome || r.nome_beneficiario || r['Nome Completo'] || '')
+        const vinculo = String(
+          r.vinculo || r.tipo_vinculo || 'TITULAR',
+        ).toUpperCase() as TipoVinculo
+        const unidade = String(r.unidade || r.unidade_regiao || 'Matriz')
+        const faixa = String(r.faixa || r.faixa_etaria || '05')
+        const tel = String(r.telefone || r.Telefone || r.fone || r.fixo || '')
+        const cel = String(r.celular || r.Celular || r.whatsapp || r.WhatsApp || '')
+        const cond = String(r.condicao || r.condicao_principal || r.diagnostico || r.cid || '')
+        const riscoVal = String(r.risco || r.Risco || 'MEDIO').toUpperCase() as NivelRisco
+        const custo = parseFloat(r.custo || r.custo_12m || r.custo_12_meses || '0') || 0
+
+        return {
+          id_externo: `BENEF-IMP-${Date.now().toString().slice(-4)}-${i + 1}`,
+          matricula,
+          nome_beneficiario: nome,
+          tipo_vinculo: vinculo,
+          unidade_regiao: unidade,
+          faixa,
+          faixa_etaria: faixa,
+          telefone: tel,
+          celular: cel,
+          condicao_principal: cond,
+          risco: riscoVal,
+          custo_12_meses: custo,
+          status: 'ELEGIVEL',
+          permite_contato_whatsapp_sms: true,
+        }
+      })
+
+      const { validRows, errors } = processAndValidateRows(rawBeneficiarios)
+      setPreviewData(validRows)
+      setValidationErrors(errors)
+    } catch (err: any) {
+      setErrorMsg(`Erro ao processar arquivo: ${err?.message || 'Formato inválido'}`)
+      setPreviewData([])
     }
   }
 
   const loadExampleSpreadsheet = () => {
     setFileName('beneficiarios_cuidado_saude_lote_marco.xlsx')
-    setPreviewData(mockSpreadsheetRows)
+    const { validRows, errors } = processAndValidateRows(mockSpreadsheetRows)
+    setPreviewData(validRows)
+    setValidationErrors(errors)
     setErrorMsg(null)
     setSuccessMsg(null)
   }
@@ -211,6 +281,30 @@ export default function GestorImportarPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-sm">{errorMsg}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Relatório de Validação de Contatos */}
+      {validationErrors.length > 0 && (
+        <Alert className="bg-amber-50 border-amber-300 text-amber-900">
+          <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <AlertTitle className="font-bold text-sm">
+            Linhas Descartadas por Inconsistência de Contato ({validationErrors.length})
+          </AlertTitle>
+          <AlertDescription className="text-xs space-y-2 mt-1">
+            <p>
+              Telefone e WhatsApp são obrigatórios com exatamente 11 dígitos numéricos (DDD +
+              celular). As seguintes linhas foram excluídas da importação para garantir a
+              integridade:
+            </p>
+            <div className="mt-2 p-2 bg-white/80 rounded border border-amber-200 max-h-36 overflow-y-auto font-mono text-[11px] text-amber-950 space-y-1">
+              {validationErrors.map((err, i) => (
+                <div key={i}>
+                  Linha {err.linha} | Matrícula: {err.matricula} ({err.nome}) — {err.motivo}
+                </div>
+              ))}
+            </div>
+          </AlertDescription>
         </Alert>
       )}
 

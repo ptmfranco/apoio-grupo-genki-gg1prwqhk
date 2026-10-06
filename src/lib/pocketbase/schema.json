@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-06T20:51:04.238Z",
+  "generatedAt": "2026-10-06T21:07:30.582Z",
   "collections": [
     {
       "name": "users",
@@ -1997,6 +1997,80 @@
       "indexes": [
         "CREATE INDEX idx_respostas_ficha ON respostas_questionarios (ficha_id)",
         "CREATE INDEX idx_respostas_template ON respostas_questionarios (template_id)"
+      ]
+    },
+    {
+      "name": "cid10",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "codigo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "capitulo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "grupo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "categoria",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "subcategoria",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_cid10_codigo ON cid10 (codigo)",
+        "CREATE INDEX idx_cid10_descricao ON cid10 (descricao)",
+        "CREATE INDEX idx_cid10_ativo ON cid10 (ativo)"
       ]
     }
   ]

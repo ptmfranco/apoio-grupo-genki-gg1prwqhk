@@ -263,6 +263,19 @@ export interface QuestaoClinica {
   placeholder?: string
 }
 
+export interface Cid10Item {
+  id: string
+  codigo: string
+  descricao: string
+  capitulo?: string
+  grupo?: string
+  categoria?: string
+  subcategoria?: string
+  ativo: boolean
+  created?: string
+  updated?: string
+}
+
 export interface QuestionarioTemplate {
   id: string
   condicao_principal: string

@@ -11,6 +11,19 @@ export type TemaPreferido = 'LIGHT' | 'DARK'
 export type CategoriaProfissional = 'ENFERMEIRO' | 'MEDICO' | 'ADMINISTRATIVO'
 export type TipoProfissional = 'ENFERMEIRO' | 'MEDICO' | 'ADMINISTRATIVO'
 
+export interface Cid10Item {
+  id: string
+  codigo: string
+  descricao: string
+  capitulo?: string
+  grupo?: string
+  categoria?: string
+  subcategoria?: string
+  ativo: boolean
+  created?: string
+  updated?: string
+}
+
 export interface User {
   id: string
   email: string

@@ -24,15 +24,19 @@ import {
 import { RiscoBadge, StatusBeneficiarioBadge } from '@/components/common/Badges'
 import { Search, Plus, Edit, Trash2, CheckCircle, XCircle, Filter } from 'lucide-react'
 import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
+import { CidCombobox } from '@/components/common/CidCombobox'
+import { formatPhone, validatePhoneField } from '@/lib/phoneMask'
 
 export default function GestorBeneficiariosCrud() {
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([])
   const [atendentes, setAtendentes] = useState<User[]>([])
   const [search, setSearch] = useState('')
   const [filtroFaixa, setFiltroFaixa] = useState<string>('TODAS')
+  const [filtroCondicao, setFiltroCondicao] = useState('')
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Beneficiario | null>(null)
+  const [phoneErrors, setPhoneErrors] = useState<{ celular?: string; telefone?: string }>({})
 
   // Form State
   const [formData, setFormData] = useState<Partial<Beneficiario>>({
@@ -75,6 +79,7 @@ export default function GestorBeneficiariosCrud() {
 
   const handleOpenCreate = () => {
     setEditingItem(null)
+    setPhoneErrors({})
     setFormData({
       matricula: `MAT-${Math.floor(1000 + Math.random() * 9000)}`,
       nome_beneficiario: '',
@@ -83,8 +88,8 @@ export default function GestorBeneficiariosCrud() {
       tipo_vinculo: 'TITULAR',
       faixa: '05',
       faixa_etaria: '05',
-      telefone: '(11) 3322-1100',
-      celular: '(11) 98877-6655',
+      telefone: '',
+      celular: '',
       email: '',
       custo_12_meses: 5000,
       condicao_principal: '',
@@ -99,13 +104,35 @@ export default function GestorBeneficiariosCrud() {
 
   const handleOpenEdit = (b: Beneficiario) => {
     setEditingItem(b)
+    setPhoneErrors({})
     const normalized = normalizeFaixaId(b.faixa || b.faixa_etaria)
-    setFormData({ ...b, faixa: normalized, faixa_etaria: normalized })
+    setFormData({
+      ...b,
+      faixa: normalized,
+      faixa_etaria: normalized,
+      celular: formatPhone(b.celular),
+      telefone: formatPhone(b.telefone),
+    })
     setDialogOpen(true)
   }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validação estrita de obrigatoriedade e 11 dígitos para Celular/WhatsApp e Telefone
+    const celVal = validatePhoneField(formData.celular, 'Celular (WhatsApp)')
+    const telVal = validatePhoneField(formData.telefone, 'Telefone')
+
+    const newErrors: { celular?: string; telefone?: string } = {}
+    if (!celVal.valid) newErrors.celular = celVal.error
+    if (!telVal.valid) newErrors.telefone = telVal.error
+
+    if (!celVal.valid || !telVal.valid) {
+      setPhoneErrors(newErrors)
+      return
+    }
+
+    setPhoneErrors({})
     try {
       if (editingItem) {
         await BeneficiariosService.update(editingItem.id, formData)
@@ -144,6 +171,15 @@ export default function GestorBeneficiariosCrud() {
       if (bFaixaId !== filtroFaixa) return false
     }
 
+    if (filtroCondicao && filtroCondicao.trim()) {
+      const cond = (b.condicao_principal || '').toLowerCase()
+      const filterTerm = filtroCondicao.trim().toLowerCase()
+      // Casar por código ou descrição
+      const parts = filterTerm.split('—').map((s) => s.trim().toLowerCase())
+      const match = parts.some((p) => p && cond.includes(p))
+      if (!match && !cond.includes(filterTerm)) return false
+    }
+
     return true
   })
 
@@ -177,23 +213,33 @@ export default function GestorBeneficiariosCrud() {
               className="pl-9 text-xs"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-xs font-semibold text-slate-600 whitespace-nowrap flex items-center gap-1">
-              <Filter className="w-3.5 h-3.5 text-slate-400" /> Faixa Etária:
-            </Label>
-            <Select value={filtroFaixa} onValueChange={setFiltroFaixa}>
-              <SelectTrigger className="w-[180px] text-xs h-9">
-                <SelectValue placeholder="Todas as Faixas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODAS">Todas as Faixas</SelectItem>
-                {FAIXAS_ETARIAS.map((f) => (
-                  <SelectItem key={f.id} value={f.id}>
-                    {f.id} - {f.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs font-semibold text-slate-600 whitespace-nowrap flex items-center gap-1">
+                <Filter className="w-3.5 h-3.5 text-slate-400" /> Faixa:
+              </Label>
+              <Select value={filtroFaixa} onValueChange={setFiltroFaixa}>
+                <SelectTrigger className="w-[150px] text-xs h-9">
+                  <SelectValue placeholder="Todas as Faixas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODAS">Todas as Faixas</SelectItem>
+                  {FAIXAS_ETARIAS.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.id} - {f.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="w-[240px]">
+              <CidCombobox
+                value={filtroCondicao}
+                onChange={(val) => setFiltroCondicao(val)}
+                placeholder="Filtrar por CID-10..."
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -371,20 +417,55 @@ export default function GestorBeneficiariosCrud() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <Label className="text-xs font-semibold">Celular (WhatsApp)</Label>
+                <Label className="text-xs font-semibold flex items-center justify-between">
+                  <span>
+                    Celular (WhatsApp) <span className="text-rose-500">*</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">11 dígitos</span>
+                </Label>
                 <Input
                   value={formData.celular || ''}
-                  onChange={(e) => setFormData({ ...formData, celular: e.target.value })}
-                  className="text-xs mt-1"
+                  onChange={(e) => {
+                    const masked = formatPhone(e.target.value)
+                    setFormData({ ...formData, celular: masked })
+                    if (phoneErrors.celular) setPhoneErrors({ ...phoneErrors, celular: undefined })
+                  }}
+                  placeholder="(99) 9999-99999"
+                  maxLength={15}
+                  required
+                  className={`text-xs mt-1 ${phoneErrors.celular ? 'border-rose-500 focus-visible:ring-rose-500' : ''}`}
                 />
+                {phoneErrors.celular && (
+                  <p className="text-[11px] text-rose-600 mt-1 leading-tight font-medium">
+                    {phoneErrors.celular}
+                  </p>
+                )}
               </div>
               <div>
-                <Label className="text-xs font-semibold">Telefone Fixo</Label>
+                <Label className="text-xs font-semibold flex items-center justify-between">
+                  <span>
+                    Telefone de Contato <span className="text-rose-500">*</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">11 dígitos</span>
+                </Label>
                 <Input
                   value={formData.telefone || ''}
-                  onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                  className="text-xs mt-1"
+                  onChange={(e) => {
+                    const masked = formatPhone(e.target.value)
+                    setFormData({ ...formData, telefone: masked })
+                    if (phoneErrors.telefone)
+                      setPhoneErrors({ ...phoneErrors, telefone: undefined })
+                  }}
+                  placeholder="(99) 9999-99999"
+                  maxLength={15}
+                  required
+                  className={`text-xs mt-1 ${phoneErrors.telefone ? 'border-rose-500 focus-visible:ring-rose-500' : ''}`}
                 />
+                {phoneErrors.telefone && (
+                  <p className="text-[11px] text-rose-600 mt-1 leading-tight font-medium">
+                    {phoneErrors.telefone}
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-xs font-semibold">E-mail</Label>
@@ -392,6 +473,7 @@ export default function GestorBeneficiariosCrud() {
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="exemplo@email.com"
                   className="text-xs mt-1"
                 />
               </div>
@@ -404,14 +486,16 @@ export default function GestorBeneficiariosCrud() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs font-semibold">Condição Principal / Diagnóstico</Label>
-                  <Input
-                    value={formData.condicao_principal || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, condicao_principal: e.target.value })
-                    }
-                    className="text-xs mt-1"
-                  />
+                  <Label className="text-xs font-semibold flex items-center gap-1">
+                    Condição Principal (CID-10)
+                  </Label>
+                  <div className="mt-1">
+                    <CidCombobox
+                      value={formData.condicao_principal || ''}
+                      onChange={(val) => setFormData({ ...formData, condicao_principal: val })}
+                      placeholder="Selecione o CID-10..."
+                    />
+                  </div>
                 </div>
 
                 <div>

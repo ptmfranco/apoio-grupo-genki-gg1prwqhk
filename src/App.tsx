@@ -15,6 +15,7 @@ import NotFound from './pages/NotFound'
 // Módulo do Gestor (GESTOR_VENART, GESTOR_PROGRAMA)
 import GestorDashboard from './pages/gestor/GestorDashboard'
 import GestorImportarPage from './pages/gestor/GestorImportar'
+import GestorCid10Page from './pages/gestor/GestorCid10'
 import GestorSelecionarPage from './pages/gestor/GestorSelecionar'
 import GestorBeneficiariosCrud from './pages/gestor/GestorBeneficiarios'
 import GestorUsuariosCrud from './pages/gestor/GestorUsuarios'
@@ -65,6 +66,16 @@ const App = () => (
               <ProtectedRoute allowedRoles={['GESTOR_VENART']}>
                 <AppLayout>
                   <GestorImportarPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gestor/cid10"
+            element={
+              <ProtectedRoute allowedRoles={['GESTOR_VENART', 'GESTOR_PROGRAMA']}>
+                <AppLayout>
+                  <GestorCid10Page />
                 </AppLayout>
               </ProtectedRoute>
             }

@@ -849,20 +849,43 @@ export const QuestionariosService = {
     return record as unknown as QuestionarioTemplate
   },
 
-  // Obter template para a condição principal informada, com fallback genérico se não houver
+  // Obter template para a condição principal informada, com fallback genérico se não houver.
+  // Suporta matching tanto por texto puro quanto por formato CID-10 "CÓDIGO — DESCRIÇÃO" ou termos clínicos.
   async getTemplatePorCondicao(condicao?: string): Promise<QuestionarioTemplate> {
     if (condicao && condicao.trim()) {
       try {
-        const clean = condicao.trim().replace(/['"\\]/g, '')
-        const records = await pb.collection('questionarios_templates').getFullList({
-          filter: `ativo = true && condicao_principal ~ "${clean}"`,
+        const raw = condicao.trim()
+        // Se vier no formato "I10 — Hipertensão essencial" ou similar, extrair partes
+        const parts = raw.split('—').map((s) => s.trim())
+        const codigo = parts[0] || ''
+        const descricao = parts[1] || ''
+
+        const allTemplates = await pb.collection('questionarios_templates').getFullList({
+          filter: 'ativo = true',
           requestKey: null,
         })
-        if (records.length > 0) {
-          const exact = records.find(
-            (r) => r.condicao_principal.toLowerCase() === condicao.trim().toLowerCase(),
+
+        if (allTemplates.length > 0) {
+          // 1. Tentar match exato por nome
+          const exact = allTemplates.find(
+            (t) =>
+              t.condicao_principal.toLowerCase() === raw.toLowerCase() ||
+              (descricao && t.condicao_principal.toLowerCase() === descricao.toLowerCase()),
           )
-          return (exact || records[0]) as unknown as QuestionarioTemplate
+          if (exact) return exact as unknown as QuestionarioTemplate
+
+          // 2. Tentar match parcial (termos chaves como "Hipertensão", "Diabetes", "Lombalgia", "Cardíaca", "Asma")
+          const termMatches = allTemplates.find((t) => {
+            const tNome = t.condicao_principal.toLowerCase()
+            return (
+              (descricao &&
+                (descricao.toLowerCase().includes(tNome) ||
+                  tNome.includes(descricao.toLowerCase()))) ||
+              raw.toLowerCase().includes(tNome) ||
+              tNome.includes(raw.toLowerCase())
+            )
+          })
+          if (termMatches) return termMatches as unknown as QuestionarioTemplate
         }
       } catch (err) {
         console.warn('Erro ao buscar template por condição:', err)

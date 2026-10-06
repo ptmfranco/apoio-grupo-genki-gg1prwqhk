@@ -26,6 +26,7 @@ import {
   Users,
 } from 'lucide-react'
 import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
+import { CidCombobox } from '@/components/common/CidCombobox'
 
 export default function GestorRelatoriosPage() {
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([])
@@ -36,6 +37,7 @@ export default function GestorRelatoriosPage() {
 
   // Filtros
   const [filtroRegiao, setFiltroRegiao] = useState('ALL')
+  const [filtroCondicao, setFiltroCondicao] = useState('')
   const [filtroFaixa, setFiltroFaixa] = useState('ALL')
 
   useEffect(() => {
@@ -186,6 +188,13 @@ export default function GestorRelatoriosPage() {
                     <SelectItem value="Belo Horizonte">Belo Horizonte</SelectItem>
                   </SelectContent>
                 </Select>
+                <div className="w-[220px]">
+                  <CidCombobox
+                    value={filtroCondicao}
+                    onChange={(val) => setFiltroCondicao(val)}
+                    placeholder="Filtrar por CID-10..."
+                  />
+                </div>
                 <Button
                   size="sm"
                   variant="outline"
@@ -219,7 +228,14 @@ export default function GestorRelatoriosPage() {
                         const matchFaixa =
                           filtroFaixa === 'ALL' ||
                           normalizeFaixaId(b.faixa || b.faixa_etaria) === filtroFaixa
-                        return matchRegiao && matchFaixa
+                        let matchCondicao = true
+                        if (filtroCondicao && filtroCondicao.trim()) {
+                          const c = (b.condicao_principal || '').toLowerCase()
+                          const term = filtroCondicao.trim().toLowerCase()
+                          const parts = term.split('—').map((s) => s.trim().toLowerCase())
+                          matchCondicao = parts.some((p) => p && c.includes(p)) || c.includes(term)
+                        }
+                        return matchRegiao && matchFaixa && matchCondicao
                       })
                       .map((b) => (
                         <tr key={b.id} className="hover:bg-slate-50 text-xs">

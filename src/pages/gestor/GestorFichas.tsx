@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RiscoBadge, StatusGeralBadge } from '@/components/common/Badges'
+import { CidCombobox } from '@/components/common/CidCombobox'
 import {
   Search,
   Star,
@@ -42,6 +43,7 @@ export default function GestorFichasCrud() {
   const [fichas, setFichas] = useState<FichaAtendimento[]>([])
   const [search, setSearch] = useState('')
   const [filtroFaixa, setFiltroFaixa] = useState<string>('TODAS')
+  const [filtroCondicao, setFiltroCondicao] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [selectedFicha, setSelectedFicha] = useState<FichaAtendimento | null>(null)
   const [historicoList, setHistoricoList] = useState<any[]>([])
@@ -101,7 +103,15 @@ export default function GestorFichasCrud() {
     const bFaixa = f.expand?.beneficiario_id?.faixa || f.expand?.beneficiario_id?.faixa_etaria
     const matchFaixa = filtroFaixa === 'ALL' || normalizeFaixaId(bFaixa) === filtroFaixa
 
-    return matchSearch && matchFaixa
+    let matchCondicao = true
+    if (filtroCondicao && filtroCondicao.trim()) {
+      const fCond = (f.condicao_principal || '').toLowerCase()
+      const filterTerm = filtroCondicao.trim().toLowerCase()
+      const parts = filterTerm.split('—').map((s) => s.trim().toLowerCase())
+      matchCondicao = parts.some((p) => p && fCond.includes(p)) || fCond.includes(filterTerm)
+    }
+
+    return matchSearch && matchFaixa && matchCondicao
   })
 
   return (
@@ -134,21 +144,30 @@ export default function GestorFichasCrud() {
               className="pl-9 text-xs"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <Select value={filtroFaixa} onValueChange={setFiltroFaixa}>
-              <SelectTrigger className="w-[170px] text-xs h-8">
-                <SelectValue placeholder="Faixa Etária" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todas as Faixas</SelectItem>
-                {FAIXAS_ETARIAS.map((f) => (
-                  <SelectItem key={f.id} value={f.id}>
-                    {f.id} - {f.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <Filter className="w-3.5 h-3.5 text-slate-400" />
+              <Select value={filtroFaixa} onValueChange={setFiltroFaixa}>
+                <SelectTrigger className="w-[150px] text-xs h-8">
+                  <SelectValue placeholder="Faixa Etária" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Todas as Faixas</SelectItem>
+                  {FAIXAS_ETARIAS.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.id} - {f.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-[230px]">
+              <CidCombobox
+                value={filtroCondicao}
+                onChange={(val) => setFiltroCondicao(val)}
+                placeholder="Filtrar por CID-10..."
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">

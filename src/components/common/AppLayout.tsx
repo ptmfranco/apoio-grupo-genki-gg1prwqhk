@@ -35,6 +35,7 @@ import {
   Moon,
   Shield,
   ClipboardList,
+  Stethoscope,
 } from 'lucide-react'
 import { UserPerfil } from '@/types/saude'
 
@@ -54,6 +55,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const gestorVenartNav: NavItem[] = [
     { label: 'Visão Geral (Venart)', href: '/gestor', icon: LayoutDashboard },
     { label: 'Importar Lotes', href: '/gestor/importar', icon: Upload },
+    { label: 'Catálogo CID-10', href: '/gestor/cid10', icon: Stethoscope },
     { label: 'Selecionar Elegíveis', href: '/gestor/selecionar', icon: CheckSquare },
     { label: 'Beneficiários', href: '/gestor/beneficiarios', icon: Users },
     { label: 'Gestão de Usuários', href: '/gestor/usuarios', icon: UserCheck },
@@ -67,6 +69,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const gestorProgramaNav: NavItem[] = [
     { label: 'Painel do Programa', href: '/gestor', icon: LayoutDashboard },
+    { label: 'Catálogo CID-10', href: '/gestor/cid10', icon: Stethoscope },
     { label: 'Aprovação de Vidas', href: '/gestor/selecionar', icon: CheckSquare },
     { label: 'Beneficiários Clínicos', href: '/gestor/beneficiarios', icon: Users },
     { label: 'Fichas de Atendimento', href: '/gestor/fichas', icon: FileText },

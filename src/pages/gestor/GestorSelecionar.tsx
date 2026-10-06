@@ -167,8 +167,8 @@ export default function GestorSelecionarPage() {
 
       {/* Filtros Bar */}
       <Card className="border-slate-200">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <CardContent className="p-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
               <Input
@@ -176,6 +176,14 @@ export default function GestorSelecionarPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 text-xs"
+              />
+            </div>
+
+            <div className="w-full">
+              <CidCombobox
+                value={condicaoFilter}
+                onChange={(val) => setCondicaoFilter(val)}
+                placeholder="Filtrar por CID-10..."
               />
             </div>
 
