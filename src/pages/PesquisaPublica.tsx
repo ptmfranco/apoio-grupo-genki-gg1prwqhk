@@ -13,7 +13,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
-import { HeartPulse, Star, CheckCircle2, AlertTriangle, ShieldCheck, ThumbsUp } from 'lucide-react'
+import { Star, CheckCircle2, AlertTriangle, ShieldCheck, ThumbsUp } from 'lucide-react'
+import { GenkiLogo } from '@/components/common/GenkiLogo'
 
 export default function PesquisaPublicaPage() {
   const { token } = useParams<{ token: string }>()
@@ -103,24 +104,26 @@ export default function PesquisaPublicaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-teal-50 via-white to-slate-100 flex flex-col justify-between py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-[#eaf2f6] via-white to-slate-100 flex flex-col justify-between py-8 px-4">
       {/* Header */}
-      <div className="max-w-xl mx-auto w-full text-center space-y-2 mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-teal-600 text-white shadow-md shadow-teal-600/20 mb-1">
-          <HeartPulse className="w-6 h-6" />
+      <div className="max-w-xl mx-auto w-full text-center space-y-3 mb-6 flex flex-col items-center">
+        <div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-200 inline-flex flex-col items-center">
+          <GenkiLogo variant="colored" width={220} height={44} />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">CareTrack Saúde</h1>
-        <p className="text-xs text-teal-700 font-medium">
-          Programa de Acompanhamento de Saúde e Cuidado Contínuo
-        </p>
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Apoio Grupo Genki</h1>
+          <p className="text-xs text-[#163A4D] font-medium">
+            Programa de Acompanhamento de Saúde e Cuidado Contínuo
+          </p>
+        </div>
       </div>
 
       {/* Main Card */}
       <div className="max-w-xl mx-auto w-full">
         <Card className="shadow-xl border-slate-200/80 overflow-hidden bg-white">
-          <div className="bg-gradient-to-r from-teal-600 to-emerald-600 p-6 text-white text-center">
+          <div className="bg-[#163A4D] p-6 text-white text-center border-b-4 border-[#D4A359]">
             <h2 className="text-xl font-bold">Pesquisa de Satisfação do Beneficiário</h2>
-            <p className="text-xs text-teal-100 mt-1">
+            <p className="text-xs text-amber-200/90 mt-1">
               Sua opinião nos ajuda a melhorar a qualidade do atendimento e suporte em saúde
             </p>
           </div>
@@ -185,7 +188,7 @@ export default function PesquisaPublicaPage() {
                     })}
                   </div>
 
-                  <div className="text-xs font-semibold text-teal-800 uppercase tracking-wide">
+                  <div className="text-xs font-semibold text-[#163A4D] uppercase tracking-wide">
                     {rating === 5 && '🌟 Excelente - Superou expectativas'}
                     {rating === 4 && '👍 Muito Bom - Atendimento de qualidade'}
                     {rating === 3 && '👌 Bom - Atendimento satisfatório'}
@@ -215,7 +218,7 @@ export default function PesquisaPublicaPage() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold h-11"
+                  className="w-full bg-[#163A4D] hover:bg-[#1f4c64] text-white font-semibold h-11 shadow-sm"
                 >
                   {submitting ? 'Gravando resposta...' : 'Enviar Avaliação de Satisfação'}
                 </Button>
@@ -231,7 +234,7 @@ export default function PesquisaPublicaPage() {
 
       {/* Footer */}
       <footer className="text-center text-xs text-slate-400 mt-8">
-        &copy; {new Date().getFullYear()} CareTrack Sistema de Acompanhamento de Saúde. Todos os
+        &copy; {new Date().getFullYear()} Apoio Grupo Genki - Plataforma Apoio Saúde. Todos os
         direitos reservados.
       </footer>
     </div>

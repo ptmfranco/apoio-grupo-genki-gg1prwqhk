@@ -64,6 +64,27 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        teal: {
+          50: '#f0f6f9',
+          100: '#dcebf2',
+          200: '#bdd8e6',
+          300: '#8ebfd4',
+          400: '#589fbd',
+          500: '#2b789d',
+          600: '#163A4D', // Azul-petróleo oficial Grupo Genki
+          700: '#112f3f',
+          800: '#0d2532',
+          900: '#0a1d27',
+          950: '#051118',
+        },
+        genki: {
+          petrol: 'hsl(var(--genki-petrol))',
+          'petrol-dark': 'hsl(var(--genki-petrol-dark))',
+          'petrol-light': 'hsl(var(--genki-petrol-light))',
+          amber: 'hsl(var(--genki-amber))',
+          'amber-dark': 'hsl(var(--genki-amber-dark))',
+          'amber-light': 'hsl(var(--genki-amber-light))',
+        },
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
           foreground: 'hsl(var(--sidebar-foreground))',

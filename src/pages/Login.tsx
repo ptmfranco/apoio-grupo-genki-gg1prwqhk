@@ -13,7 +13,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { HeartPulse, Lock, Mail, Shield, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { Lock, Mail, Shield, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { GenkiLogo } from '@/components/common/GenkiLogo'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -44,16 +45,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 flex flex-col justify-center items-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0c1f2b] via-[#122c3b] to-[#163a4d] flex flex-col justify-center items-center p-4">
       {/* Container Central */}
       <div className="w-full max-w-md space-y-5">
-        {/* Brand header */}
-        <div className="text-center space-y-1.5">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-500 text-white shadow-xl shadow-teal-500/20 mb-1">
-            <HeartPulse className="w-8 h-8" />
+        {/* Brand header com logotipo oficial do Grupo Genki */}
+        <div className="text-center space-y-2 flex flex-col items-center">
+          <div className="px-5 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-xl inline-flex flex-col items-center">
+            <GenkiLogo variant="white" width={240} height={48} />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Apoio Grupo Genki</h1>
-          <p className="text-sm text-slate-300">Plataforma Apoio Saúde</p>
+          <div className="space-y-0.5 pt-1">
+            <h1 className="text-xl font-bold tracking-tight text-white">Apoio Grupo Genki</h1>
+            <p className="text-xs font-medium text-amber-300/90 tracking-wide uppercase">
+              Plataforma Apoio Saúde
+            </p>
+          </div>
         </div>
 
         {/* Card Formulário */}
@@ -128,7 +133,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-teal-600 hover:bg-teal-700 text-white h-9 font-semibold text-xs"
+                className="w-full bg-[#163A4D] hover:bg-[#1f4c64] dark:bg-[#D4A359] dark:hover:bg-[#e0b06b] dark:text-[#0f2430] text-white h-9 font-semibold text-xs transition-colors shadow-sm"
                 disabled={loading}
               >
                 {loading ? 'Autenticando...' : 'Entrar no Sistema'}

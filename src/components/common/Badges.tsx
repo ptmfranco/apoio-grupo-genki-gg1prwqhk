@@ -44,7 +44,7 @@ export function LgpdBadge({ perfil }: { perfil: UserPerfil | string }) {
     return (
       <Badge
         variant="outline"
-        className="bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 border-teal-300 dark:border-teal-800 flex items-center gap-1"
+        className="bg-[#163A4D]/10 dark:bg-[#163A4D]/30 text-[#163A4D] dark:text-[#88b6cc] border-[#163A4D]/30 dark:border-[#163A4D]/60 flex items-center gap-1"
       >
         <ShieldCheck className="w-3.5 h-3.5" />
         Operação (Nome Protegido / Acesso Clínico Liberado)

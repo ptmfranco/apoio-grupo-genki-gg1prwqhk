@@ -1,14 +1,25 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { GenkiLogo } from '@/components/common/GenkiLogo'
 
 export default function Index() {
   const { user, perfil, isLoading } = useAuth()
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-        <div className="animate-pulse text-sm">Carregando Apoio Grupo Genki...</div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0c1f2b] text-white p-4">
+        <div className="flex flex-col items-center gap-4">
+          <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 shadow-2xl">
+            <GenkiLogo variant="white" width={220} height={44} />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+            <div className="text-xs font-medium text-slate-300 tracking-wide">
+              Carregando Apoio Grupo Genki...
+            </div>
+          </div>
+        </div>
       </div>
     )
   }

@@ -30,9 +30,9 @@ export const StepTracker: React.FC<StepTrackerProps> = ({ currentStep, className
               className={cn(
                 'relative flex flex-col p-2 rounded-lg border text-left transition-all duration-200',
                 isDone
-                  ? 'bg-teal-50/70 border-teal-200 dark:bg-teal-950/40 dark:border-teal-800 text-teal-900 dark:text-teal-200'
+                  ? 'bg-[#163A4D]/10 border-[#163A4D]/30 dark:bg-[#163A4D]/25 dark:border-[#163A4D]/50 text-[#163A4D] dark:text-[#9bc2d7]'
                   : isCurrent
-                    ? 'bg-primary text-primary-foreground border-primary shadow-sm ring-2 ring-primary/20'
+                    ? 'bg-[#163A4D] dark:bg-[#D4A359] text-white dark:text-[#0b1d28] border-[#163A4D] dark:border-[#D4A359] shadow-sm ring-2 ring-[#D4A359]/30'
                     : 'bg-muted/40 border-border text-muted-foreground',
               )}
             >
@@ -41,23 +41,30 @@ export const StepTracker: React.FC<StepTrackerProps> = ({ currentStep, className
                   className={cn(
                     'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold',
                     isDone
-                      ? 'bg-teal-600 text-white'
+                      ? 'bg-[#163A4D] dark:bg-[#D4A359] text-white dark:text-[#0b1d28]'
                       : isCurrent
-                        ? 'bg-white text-teal-800 font-extrabold'
+                        ? 'bg-[#D4A359] dark:bg-[#163A4D] text-[#0b1d28] dark:text-white font-extrabold'
                         : 'bg-muted text-muted-foreground',
                   )}
                 >
                   {isDone ? <Check className="w-3 h-3 stroke-[3]" /> : item.etapa}
                 </span>
-                {isCurrent && <Clock className="w-3.5 h-3.5 animate-spin text-white opacity-80" />}
+                {isCurrent && (
+                  <Clock className="w-3.5 h-3.5 animate-spin text-white dark:text-[#0b1d28] opacity-80" />
+                )}
               </div>
-              <p className={cn('text-[11px] font-bold truncate', isCurrent ? 'text-white' : '')}>
+              <p
+                className={cn(
+                  'text-[11px] font-bold truncate',
+                  isCurrent ? 'text-white dark:text-[#0b1d28]' : '',
+                )}
+              >
                 {item.titulo}
               </p>
               <span
                 className={cn(
                   'text-[9px] font-semibold mt-0.5 truncate uppercase tracking-tight',
-                  isCurrent ? 'text-teal-100' : 'text-muted-foreground',
+                  isCurrent ? 'text-amber-200 dark:text-[#0b1d28]/80' : 'text-muted-foreground',
                 )}
               >
                 {item.responsavel}
