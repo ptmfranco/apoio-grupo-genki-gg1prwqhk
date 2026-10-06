@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BeneficiariosService, FichasService, PesquisasService } from '@/services/saude'
+import { getFaixaLabel } from '@/constants/faixasEtarias'
 import { Beneficiario, FichaAtendimento, PesquisaSatisfacao } from '@/types/saude'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -346,6 +347,7 @@ export default function GestorDashboard() {
                 <tr>
                   <th className="p-3">Matrícula</th>
                   <th className="p-3">Nome Beneficiário</th>
+                  <th className="p-3">Faixa Etária</th>
                   <th className="p-3">Unidade</th>
                   <th className="p-3">Condição Principal</th>
                   <th className="p-3">Risco</th>
@@ -360,6 +362,9 @@ export default function GestorDashboard() {
                     <td className="p-3 font-mono text-xs text-slate-600">{b.matricula}</td>
                     <td className="p-3 font-medium text-slate-900">
                       {b.nome || b.nome_beneficiario}
+                    </td>
+                    <td className="p-3 text-xs font-medium text-teal-800">
+                      {getFaixaLabel(b.faixa || b.faixa_etaria)}
                     </td>
                     <td className="p-3 text-xs text-slate-600">{b.unidade || b.unidade_regiao}</td>
                     <td className="p-3 text-xs text-slate-800 max-w-xs truncate font-medium">

@@ -14,12 +14,21 @@ import {
   ArrowRight,
   UserCheck,
   Building2,
+  Filter,
 } from 'lucide-react'
-import { getFaixaLabel } from '@/constants/faixasEtarias'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
 
 export default function RhDashboard() {
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([])
   const [atendentes, setAtendentes] = useState<User[]>([])
+  const [filtroFaixa, setFiltroFaixa] = useState<string>('TODAS')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -163,7 +172,7 @@ export default function RhDashboard() {
 
       {/* Lista de Selecionados com Filtro LGPD Ativo */}
       <Card className="border-slate-200">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <CardTitle className="text-base font-semibold text-slate-800">
               Beneficiários Selecionados (Visão RH - Dados Protegidos)
@@ -172,15 +181,33 @@ export default function RhDashboard() {
               Exibição cadastral sem dados clínicos sensíveis
             </CardDescription>
           </div>
-          <Link to="/rh/distribuir">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs gap-1 text-amber-700 border-amber-300"
-            >
-              Ir para Distribuição <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <Filter className="w-3.5 h-3.5 text-slate-400" />
+              <Select value={filtroFaixa} onValueChange={setFiltroFaixa}>
+                <SelectTrigger className="w-[170px] text-xs h-8">
+                  <SelectValue placeholder="Faixa Etária" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODAS">Todas as Faixas</SelectItem>
+                  {FAIXAS_ETARIAS.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.id} - {f.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Link to="/rh/distribuir">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1 text-amber-700 border-amber-300 h-8"
+              >
+                Ir para Distribuição <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -198,38 +225,43 @@ export default function RhDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {selecionados.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50 text-xs">
-                    <td className="p-3.5 font-mono font-medium">{b.matricula}</td>
-                    <td className="p-3.5 font-medium text-slate-900">
-                      {b.nome || b.nome_beneficiario}
-                    </td>
-                    <td className="p-3.5 text-slate-600">{b.unidade || b.unidade_regiao}</td>
-                    <td className="p-3.5 text-teal-800 dark:text-teal-300 font-medium">
-                      {getFaixaLabel(b.faixa || b.faixa_etaria)}
-                    </td>
-                    <td className="p-3.5 text-slate-600 font-mono">
-                      {b.celular || b.telefone || 'Não cadastrado'}
-                    </td>
-                    <td className="p-3.5">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[11px] font-medium ${
-                          b.permite_contato_whatsapp_sms
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-rose-100 text-rose-800'
-                        }`}
-                      >
-                        {b.permite_contato_whatsapp_sms ? 'Sim (Opt-in)' : 'Não'}
-                      </span>
-                    </td>
-                    <td className="p-3.5">
-                      <StatusBeneficiarioBadge status={b.status} />
-                    </td>
-                    <td className="p-3.5 font-medium text-teal-800">
-                      {b.expand?.atendente_id?.name || 'Aguardando Atendente'}
-                    </td>
-                  </tr>
-                ))}
+                {selecionados
+                  .filter((b) => {
+                    if (filtroFaixa === 'TODAS') return true
+                    return normalizeFaixaId(b.faixa || b.faixa_etaria) === filtroFaixa
+                  })
+                  .map((b) => (
+                    <tr key={b.id} className="hover:bg-slate-50 text-xs">
+                      <td className="p-3.5 font-mono font-medium">{b.matricula}</td>
+                      <td className="p-3.5 font-medium text-slate-900">
+                        {b.nome || b.nome_beneficiario}
+                      </td>
+                      <td className="p-3.5 text-slate-600">{b.unidade || b.unidade_regiao}</td>
+                      <td className="p-3.5 text-teal-800 dark:text-teal-300 font-medium">
+                        {getFaixaLabel(b.faixa || b.faixa_etaria)}
+                      </td>
+                      <td className="p-3.5 text-slate-600 font-mono">
+                        {b.celular || b.telefone || 'Não cadastrado'}
+                      </td>
+                      <td className="p-3.5">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[11px] font-medium ${
+                            b.permite_contato_whatsapp_sms
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}
+                        >
+                          {b.permite_contato_whatsapp_sms ? 'Sim (Opt-in)' : 'Não'}
+                        </span>
+                      </td>
+                      <td className="p-3.5">
+                        <StatusBeneficiarioBadge status={b.status} />
+                      </td>
+                      <td className="p-3.5 font-medium text-teal-800">
+                        {b.expand?.atendente_id?.name || 'Aguardando Atendente'}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

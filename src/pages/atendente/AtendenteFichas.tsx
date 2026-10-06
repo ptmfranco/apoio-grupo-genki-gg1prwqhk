@@ -14,13 +14,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { RiscoBadge, StatusGeralBadge } from '@/components/common/Badges'
-import { Search, Plus, Star, Phone, MessageCircle, Mail, MessageSquare } from 'lucide-react'
+import { Search, Plus, Star, Phone, MessageCircle, Mail, MessageSquare, Filter } from 'lucide-react'
+import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
 
 export default function AtendenteFichasPage() {
   const { user } = useAuth()
   const [fichas, setFichas] = useState<FichaAtendimento[]>([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [faixaFilter, setFaixaFilter] = useState('ALL')
   const [loading, setLoading] = useState(true)
 
   const loadData = async () => {
@@ -47,7 +49,10 @@ export default function AtendenteFichasPage() {
       (f.condicao_principal || '').toLowerCase().includes(search.toLowerCase())
 
     const matchesStatus = statusFilter === 'ALL' || f.status_geral === statusFilter
-    return matchesSearch && matchesStatus
+    const bFaixa = f.expand?.beneficiario_id?.faixa || f.expand?.beneficiario_id?.faixa_etaria
+    const matchesFaixa = faixaFilter === 'ALL' || normalizeFaixaId(bFaixa) === faixaFilter
+
+    return matchesSearch && matchesStatus && matchesFaixa
   })
 
   return (
@@ -70,7 +75,7 @@ export default function AtendenteFichasPage() {
 
       <Card className="border-slate-200">
         <CardContent className="p-4 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
               <Input
@@ -80,6 +85,20 @@ export default function AtendenteFichasPage() {
                 className="pl-9 text-xs"
               />
             </div>
+
+            <Select value={faixaFilter} onValueChange={setFaixaFilter}>
+              <SelectTrigger className="text-xs">
+                <SelectValue placeholder="Faixa Etária" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todas as Faixas</SelectItem>
+                {FAIXAS_ETARIAS.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.id} - {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="text-xs">
@@ -106,6 +125,7 @@ export default function AtendenteFichasPage() {
                 <tr>
                   <th className="p-3.5">Ficha ID</th>
                   <th className="p-3.5">Beneficiário</th>
+                  <th className="p-3.5">Faixa Etária</th>
                   <th className="p-3.5">Contato / Meio</th>
                   <th className="p-3.5">Condição Clínica</th>
                   <th className="p-3.5">Risco</th>
@@ -118,7 +138,7 @@ export default function AtendenteFichasPage() {
               <tbody className="divide-y divide-slate-200">
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="p-8 text-center text-slate-500 text-xs">
+                    <td colSpan={10} className="p-8 text-center text-slate-500 text-xs">
                       Nenhuma ficha encontrada.
                     </td>
                   </tr>
@@ -137,6 +157,12 @@ export default function AtendenteFichasPage() {
                           {f.expand?.beneficiario_id?.unidade ||
                             f.expand?.beneficiario_id?.unidade_regiao}
                         </div>
+                      </td>
+                      <td className="p-3.5 text-teal-800 font-medium">
+                        {getFaixaLabel(
+                          f.expand?.beneficiario_id?.faixa ||
+                            f.expand?.beneficiario_id?.faixa_etaria,
+                        )}
                       </td>
                       <td className="p-3.5">
                         <div className="text-slate-800 font-medium">{f.status_contato}</div>

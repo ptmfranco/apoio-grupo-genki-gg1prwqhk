@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { FichasService, QuestionariosService } from '@/services/saude'
 import { FichaAtendimento, QuestionarioTemplate, RespostaQuestionario } from '@/types/saude'
 import { useAuth } from '@/contexts/AuthContext'
+import { getFaixaLabel } from '@/constants/faixasEtarias'
 import { QuestionarioClinico } from '@/components/common/QuestionarioClinico'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,7 +18,16 @@ import {
   Mail,
   MessageCircle,
   FileCheck,
+  Filter,
 } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { FAIXAS_ETARIAS, normalizeFaixaId } from '@/constants/faixasEtarias'
 import {
   Dialog,
   DialogContent,
@@ -31,6 +41,7 @@ export default function GestorFichasCrud() {
   const { user } = useAuth()
   const [fichas, setFichas] = useState<FichaAtendimento[]>([])
   const [search, setSearch] = useState('')
+  const [filtroFaixa, setFiltroFaixa] = useState<string>('TODAS')
   const [loading, setLoading] = useState(true)
   const [selectedFicha, setSelectedFicha] = useState<FichaAtendimento | null>(null)
   const [historicoList, setHistoricoList] = useState<any[]>([])
@@ -77,16 +88,21 @@ export default function GestorFichasCrud() {
     return <MessageSquare className="w-4 h-4 text-slate-500" />
   }
 
-  const filtered = fichas.filter(
-    (f) =>
+  const filtered = fichas.filter((f) => {
+    const matchSearch =
       (f.ficha_id || '').toLowerCase().includes(search.toLowerCase()) ||
       (f.expand?.beneficiario_id?.nome_beneficiario || '')
         .toLowerCase()
         .includes(search.toLowerCase()) ||
       (f.expand?.beneficiario_id?.matricula || '').toLowerCase().includes(search.toLowerCase()) ||
       (f.expand?.atendente_id?.name || '').toLowerCase().includes(search.toLowerCase()) ||
-      (f.condicao_principal || '').toLowerCase().includes(search.toLowerCase()),
-  )
+      (f.condicao_principal || '').toLowerCase().includes(search.toLowerCase())
+
+    const bFaixa = f.expand?.beneficiario_id?.faixa || f.expand?.beneficiario_id?.faixa_etaria
+    const matchFaixa = filtroFaixa === 'ALL' || normalizeFaixaId(bFaixa) === filtroFaixa
+
+    return matchSearch && matchFaixa
+  })
 
   return (
     <div className="space-y-6">
@@ -108,8 +124,8 @@ export default function GestorFichasCrud() {
       </div>
 
       <Card className="border-slate-200">
-        <CardHeader className="p-4 border-b">
-          <div className="relative max-w-md">
+        <CardHeader className="p-4 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
             <Input
               placeholder="Pesquisar por Ficha ID, beneficiário ou atendente..."
@@ -117,6 +133,22 @@ export default function GestorFichasCrud() {
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 text-xs"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
+            <Select value={filtroFaixa} onValueChange={setFiltroFaixa}>
+              <SelectTrigger className="w-[170px] text-xs h-8">
+                <SelectValue placeholder="Faixa Etária" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todas as Faixas</SelectItem>
+                {FAIXAS_ETARIAS.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.id} - {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -126,6 +158,7 @@ export default function GestorFichasCrud() {
                 <tr>
                   <th className="p-3.5">Ficha ID</th>
                   <th className="p-3.5">Beneficiário</th>
+                  <th className="p-3.5">Faixa Etária</th>
                   <th className="p-3.5">Atendente / Responsável</th>
                   <th className="p-3.5">Meio</th>
                   <th className="p-3.5">Condição / Risco</th>
@@ -151,6 +184,11 @@ export default function GestorFichasCrud() {
                       <div className="text-xs text-slate-500">
                         {f.expand?.beneficiario_id?.matricula || ''}
                       </div>
+                    </td>
+                    <td className="p-3.5 text-xs font-medium text-teal-800">
+                      {getFaixaLabel(
+                        f.expand?.beneficiario_id?.faixa || f.expand?.beneficiario_id?.faixa_etaria,
+                      )}
                     </td>
                     <td className="p-3.5 text-xs text-slate-700">
                       {f.expand?.atendente_id?.name || f.responsavel}
@@ -230,6 +268,11 @@ export default function GestorFichasCrud() {
                 ? `Beneficiário Protegido (${selectedFicha?.expand?.beneficiario_id?.matricula})`
                 : selectedFicha?.expand?.beneficiario_id?.nome_beneficiario ||
                   'Beneficiário Protegido'}{' '}
+              • Faixa:{' '}
+              {getFaixaLabel(
+                selectedFicha?.expand?.beneficiario_id?.faixa ||
+                  selectedFicha?.expand?.beneficiario_id?.faixa_etaria,
+              )}{' '}
               ({selectedFicha?.condicao_principal})
             </DialogDescription>
           </DialogHeader>

@@ -25,6 +25,7 @@ import {
   TrendingDown,
   Users,
 } from 'lucide-react'
+import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
 
 export default function GestorRelatoriosPage() {
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([])
@@ -35,6 +36,7 @@ export default function GestorRelatoriosPage() {
 
   // Filtros
   const [filtroRegiao, setFiltroRegiao] = useState('ALL')
+  const [filtroFaixa, setFiltroFaixa] = useState('ALL')
 
   useEffect(() => {
     async function loadData() {
@@ -60,8 +62,15 @@ export default function GestorRelatoriosPage() {
     let rows: any[] = []
     let filename = `relatorio-${tipo}-${new Date().toISOString().slice(0, 10)}.csv`
 
+    const rowsFiltradas = beneficiarios.filter((b) => {
+      const matchRegiao = filtroRegiao === 'ALL' || (b.unidade_regiao || '').includes(filtroRegiao)
+      const matchFaixa =
+        filtroFaixa === 'ALL' || normalizeFaixaId(b.faixa || b.faixa_etaria) === filtroFaixa
+      return matchRegiao && matchFaixa
+    })
+
     if (tipo === 'acompanhamento') {
-      rows = beneficiarios.map((b) => ({
+      rows = rowsFiltradas.map((b) => ({
         Matricula: b.matricula,
         Nome: b.nome_beneficiario,
         Unidade: b.unidade_regiao,
@@ -139,7 +148,7 @@ export default function GestorRelatoriosPage() {
         {/* Tab 1: Acompanhamento */}
         <TabsContent value="acompanhamento" className="space-y-4">
           <Card className="border-slate-200">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-base font-semibold text-slate-800">
                   Acompanhamento Populacional Completo
@@ -148,14 +157,44 @@ export default function GestorRelatoriosPage() {
                   Listagem detalhada com status, diagnósticos e equipe alocada
                 </CardDescription>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => exportCSV('acompanhamento')}
-                className="text-xs gap-1.5"
-              >
-                <Download className="w-3.5 h-3.5" /> Exportar CSV
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Filter className="w-3.5 h-3.5 text-slate-400" />
+                  <Select value={filtroFaixa} onValueChange={setFiltroFaixa}>
+                    <SelectTrigger className="w-[170px] text-xs h-8">
+                      <SelectValue placeholder="Faixa Etária" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Todas as Faixas</SelectItem>
+                      {FAIXAS_ETARIAS.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>
+                          {f.id} - {f.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Select value={filtroRegiao} onValueChange={setFiltroRegiao}>
+                  <SelectTrigger className="w-[150px] text-xs h-8">
+                    <SelectValue placeholder="Região / Unidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Todas as Unidades</SelectItem>
+                    <SelectItem value="São Paulo">São Paulo</SelectItem>
+                    <SelectItem value="Rio de Janeiro">Rio de Janeiro</SelectItem>
+                    <SelectItem value="Curitiba">Curitiba</SelectItem>
+                    <SelectItem value="Belo Horizonte">Belo Horizonte</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exportCSV('acompanhamento')}
+                  className="text-xs gap-1.5 h-8"
+                >
+                  <Download className="w-3.5 h-3.5" /> Exportar CSV
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -173,27 +212,36 @@ export default function GestorRelatoriosPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {beneficiarios.map((b) => (
-                      <tr key={b.id} className="hover:bg-slate-50 text-xs">
-                        <td className="p-3 font-mono">{b.matricula}</td>
-                        <td className="p-3 font-medium text-slate-900">{b.nome_beneficiario}</td>
-                        <td className="p-3 font-medium text-teal-800">
-                          {getFaixaLabel(b.faixa || b.faixa_etaria)}
-                        </td>
-                        <td className="p-3 text-slate-600">{b.unidade_regiao}</td>
-                        <td className="p-3 text-slate-800 font-medium">{b.condicao_principal}</td>
-                        <td className="p-3">{b.risco}</td>
-                        <td className="p-3 font-mono font-semibold text-emerald-700">
-                          {(
-                            (b.custo_12m !== undefined ? b.custo_12m : b.custo_12_meses) || 0
-                          ).toLocaleString('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          })}
-                        </td>
-                        <td className="p-3 font-semibold">{b.status}</td>
-                      </tr>
-                    ))}
+                    {beneficiarios
+                      .filter((b) => {
+                        const matchRegiao =
+                          filtroRegiao === 'ALL' || (b.unidade_regiao || '').includes(filtroRegiao)
+                        const matchFaixa =
+                          filtroFaixa === 'ALL' ||
+                          normalizeFaixaId(b.faixa || b.faixa_etaria) === filtroFaixa
+                        return matchRegiao && matchFaixa
+                      })
+                      .map((b) => (
+                        <tr key={b.id} className="hover:bg-slate-50 text-xs">
+                          <td className="p-3 font-mono">{b.matricula}</td>
+                          <td className="p-3 font-medium text-slate-900">{b.nome_beneficiario}</td>
+                          <td className="p-3 font-medium text-teal-800">
+                            {getFaixaLabel(b.faixa || b.faixa_etaria)}
+                          </td>
+                          <td className="p-3 text-slate-600">{b.unidade_regiao}</td>
+                          <td className="p-3 text-slate-800 font-medium">{b.condicao_principal}</td>
+                          <td className="p-3">{b.risco}</td>
+                          <td className="p-3 font-mono font-semibold text-emerald-700">
+                            {(
+                              (b.custo_12m !== undefined ? b.custo_12m : b.custo_12_meses) || 0
+                            ).toLocaleString('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL',
+                            })}
+                          </td>
+                          <td className="p-3 font-semibold">{b.status}</td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>

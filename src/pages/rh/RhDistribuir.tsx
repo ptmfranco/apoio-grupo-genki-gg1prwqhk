@@ -24,7 +24,7 @@ import {
   Stethoscope,
 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { getFaixaLabel } from '@/constants/faixasEtarias'
+import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
 
 export default function RhDistribuirPage() {
   const navigate = useNavigate()
@@ -39,6 +39,7 @@ export default function RhDistribuirPage() {
   // Filtros
   const [search, setSearch] = useState('')
   const [regiaoFilter, setRegiaoFilter] = useState('ALL')
+  const [faixaFilter, setFaixaFilter] = useState('ALL')
 
   const loadData = async () => {
     setLoading(true)
@@ -71,7 +72,9 @@ export default function RhDistribuirPage() {
       nomeVal.toLowerCase().includes(search.toLowerCase()) ||
       b.matricula.toLowerCase().includes(search.toLowerCase())
     const matchesRegiao = regiaoFilter === 'ALL' || regiaoVal.includes(regiaoFilter)
-    return matchesSearch && matchesRegiao
+    const matchesFaixa =
+      faixaFilter === 'ALL' || normalizeFaixaId(b.faixa || b.faixa_etaria) === faixaFilter
+    return matchesSearch && matchesRegiao && matchesFaixa
   })
 
   const toggleSelectAll = () => {
@@ -181,7 +184,7 @@ export default function RhDistribuirPage() {
       {/* Action and Filter Bar */}
       <Card className="border-slate-200">
         <CardContent className="p-4 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
               <Input
@@ -191,6 +194,20 @@ export default function RhDistribuirPage() {
                 className="pl-9 text-xs"
               />
             </div>
+
+            <Select value={faixaFilter} onValueChange={setFaixaFilter}>
+              <SelectTrigger className="text-xs">
+                <SelectValue placeholder="Faixa Etária" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todas as Faixas</SelectItem>
+                {FAIXAS_ETARIAS.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.id} - {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <Select value={regiaoFilter} onValueChange={setRegiaoFilter}>
               <SelectTrigger className="text-xs">
