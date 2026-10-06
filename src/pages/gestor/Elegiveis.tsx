@@ -27,6 +27,7 @@ import { Badge } from '@/components/ui/badge'
 import { RiskBadge } from '@/components/common/RiskBadge'
 import { StepTracker } from '@/components/common/StepTracker'
 import { LgpdNotice } from '@/components/common/LgpdNotice'
+import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
 import { toast } from 'sonner'
 import type { Beneficiario } from '@/types'
 
@@ -36,6 +37,7 @@ export default function ElegiveisSelecao() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filtroRisco, setFiltroRisco] = useState<string>('TODOS')
+  const [filtroFaixa, setFiltroFaixa] = useState<string>('TODAS')
   const [filtroStatus, setFiltroStatus] = useState<string>('ELEGIVEL')
   const [processing, setProcessing] = useState(false)
 
@@ -64,9 +66,11 @@ export default function ElegiveisSelecao() {
         b.condicao_principal.toLowerCase().includes(searchTerm.toLowerCase()))
 
     const matchRisco = filtroRisco === 'TODOS' || b.risco === filtroRisco
+    const matchFaixa =
+      filtroFaixa === 'TODAS' || normalizeFaixaId(b.faixa || b.faixa_etaria) === filtroFaixa
     const matchStatus = filtroStatus === 'TODOS' || b.status === filtroStatus
 
-    return matchSearch && matchRisco && matchStatus
+    return matchSearch && matchRisco && matchFaixa && matchStatus
   })
 
   const handleToggleSelect = (id: string) => {
@@ -168,14 +172,13 @@ export default function ElegiveisSelecao() {
               <option value="EM_ATENDIMENTO">Em Atendimento</option>
               <option value="ATENDIDO">Atendidos / Alta</option>
             </select>
-
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground ml-2">
               <span>Risco:</span>
             </div>
             <select
               value={filtroRisco}
               onChange={(e) => setFiltroRisco(e.target.value)}
-              className="h-8 px-2.5 rounded-md border border-input bg-background text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
             >
               <option value="TODOS">Todos os Riscos</option>
               <option value="CRITICO">Crítico</option>
@@ -183,6 +186,18 @@ export default function ElegiveisSelecao() {
               <option value="MEDIO">Médio</option>
               <option value="BAIXO">Baixo</option>
             </select>
+            <select
+              value={filtroFaixa}
+              onChange={(e) => setFiltroFaixa(e.target.value)}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+            >
+              <option value="TODAS">Todas as Faixas</option>
+              {FAIXAS_ETARIAS.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.id} - {f.label}
+                </option>
+              ))}
+            </select>{' '}
           </div>
         </CardContent>
       </Card>
@@ -224,6 +239,7 @@ export default function ElegiveisSelecao() {
                   <th className="p-3 font-semibold">Matrícula</th>
                   <th className="p-3 font-semibold">Nome Beneficiário</th>
                   <th className="p-3 font-semibold">Vínculo</th>
+                  <th className="p-3 font-semibold">Faixa Etária</th>
                   <th className="p-3 font-semibold">Unidade / Região</th>
                   <th className="p-3 font-semibold">Condição Clínica</th>
                   <th className="p-3 font-semibold">Risco</th>
@@ -258,6 +274,9 @@ export default function ElegiveisSelecao() {
                         <Badge variant="outline" className="text-[10px]">
                           {b.tipo_vinculo}
                         </Badge>
+                      </td>
+                      <td className="p-3 text-teal-800 dark:text-teal-300 font-medium">
+                        {getFaixaLabel(b.faixa || b.faixa_etaria)}
                       </td>
                       <td className="p-3 text-muted-foreground">{b.unidade_regiao}</td>
                       <td className="p-3 font-medium text-foreground">{b.condicao_principal}</td>

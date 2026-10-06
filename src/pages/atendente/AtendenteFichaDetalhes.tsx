@@ -22,6 +22,7 @@ import {
   RespostaQuestionario,
 } from '@/types/saude'
 import { QuestionarioClinico } from '@/components/common/QuestionarioClinico'
+import { getFaixaLabel } from '@/constants/faixasEtarias'
 import {
   Card,
   CardContent,
@@ -367,7 +368,8 @@ export default function AtendenteFichaDetalhesPage() {
                   <strong>Unidade:</strong> {selectedBeneficiario.unidade_regiao}
                 </span>
                 <span>
-                  <strong>Faixa Etária:</strong> {selectedBeneficiario.faixa_etaria}
+                  <strong>Faixa Etária:</strong>{' '}
+                  {getFaixaLabel(selectedBeneficiario.faixa || selectedBeneficiario.faixa_etaria)}
                 </span>
                 <span>
                   <strong>WhatsApp:</strong>{' '}

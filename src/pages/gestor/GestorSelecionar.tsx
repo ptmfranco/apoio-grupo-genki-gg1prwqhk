@@ -24,6 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { RiscoBadge, StatusBeneficiarioBadge } from '@/components/common/Badges'
 import { CheckSquare, Search, Filter, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
 
 export default function GestorSelecionarPage() {
   const { user } = useAuth()
@@ -37,6 +38,7 @@ export default function GestorSelecionarPage() {
   // Filtros
   const [search, setSearch] = useState('')
   const [riscoFilter, setRiscoFilter] = useState('ALL')
+  const [faixaFilter, setFaixaFilter] = useState('ALL')
   const [regiaoFilter, setRegiaoFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState('ELEGIVEL')
 
@@ -68,10 +70,12 @@ export default function GestorSelecionarPage() {
       (b.condicao_principal || '').toLowerCase().includes(search.toLowerCase())
 
     const matchesRisco = riscoFilter === 'ALL' || b.risco === riscoFilter
+    const matchesFaixa =
+      faixaFilter === 'ALL' || normalizeFaixaId(b.faixa || b.faixa_etaria) === faixaFilter
     const matchesRegiao = regiaoFilter === 'ALL' || regiaoVal.includes(regiaoFilter)
     const matchesStatus = statusFilter === 'ALL' || b.status === statusFilter
 
-    return matchesSearch && matchesRisco && matchesRegiao && matchesStatus
+    return matchesSearch && matchesRisco && matchesFaixa && matchesRegiao && matchesStatus
   })
 
   const toggleSelectAll = () => {
@@ -164,11 +168,11 @@ export default function GestorSelecionarPage() {
       {/* Filtros Bar */}
       <Card className="border-slate-200">
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
               <Input
-                placeholder="Buscar por nome, matrícula ou doença..."
+                placeholder="Buscar por nome, matrícula..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 text-xs"
@@ -181,7 +185,7 @@ export default function GestorSelecionarPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todos os Status</SelectItem>
-                <SelectItem value="ELEGIVEL">Elegíveis (Não Selecionados)</SelectItem>
+                <SelectItem value="ELEGIVEL">Elegíveis</SelectItem>
                 <SelectItem value="SELECIONADO">Selecionados</SelectItem>
                 <SelectItem value="APROVADO">Aprovados</SelectItem>
                 <SelectItem value="ATENDIDO">Atendidos (Alta)</SelectItem>
@@ -198,6 +202,20 @@ export default function GestorSelecionarPage() {
                 <SelectItem value="ALTO">Alto</SelectItem>
                 <SelectItem value="MEDIO">Médio</SelectItem>
                 <SelectItem value="BAIXO">Baixo</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={faixaFilter} onValueChange={setFaixaFilter}>
+              <SelectTrigger className="text-xs">
+                <SelectValue placeholder="Faixa Etária" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todas as Faixas</SelectItem>
+                {FAIXAS_ETARIAS.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.id} - {f.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -271,7 +289,7 @@ export default function GestorSelecionarPage() {
                   <th className="p-3.5">Nome Beneficiário</th>
                   <th className="p-3.5">Vínculo</th>
                   <th className="p-3.5">Unidade / Região</th>
-                  <th className="p-3.5">Faixa</th>
+                  <th className="p-3.5">Faixa Etária</th>
                   <th className="p-3.5">Condição Principal</th>
                   <th className="p-3.5">Risco</th>
                   <th className="p-3.5">Custo 12 Meses</th>
@@ -304,7 +322,9 @@ export default function GestorSelecionarPage() {
                       <td className="p-3.5 text-xs text-slate-600">
                         {b.unidade || b.unidade_regiao}
                       </td>
-                      <td className="p-3.5 text-xs text-slate-600">{b.faixa || b.faixa_etaria}</td>
+                      <td className="p-3.5 text-xs font-medium text-teal-800">
+                        {getFaixaLabel(b.faixa || b.faixa_etaria)}
+                      </td>
                       <td className="p-3.5 text-xs font-medium text-slate-800 max-w-xs">
                         {b.condicao_principal || '—'}
                       </td>

@@ -28,6 +28,7 @@ import { StepTracker } from '@/components/common/StepTracker'
 import { RiskBadge } from '@/components/common/RiskBadge'
 import { toast } from 'sonner'
 import type { LoteSelecao } from '@/types'
+import { getFaixaLabel } from '@/constants/faixasEtarias'
 
 // Mock de linhas para preview de planilha .xlsx/.csv
 const PREVIEW_MOCK_DATA = [
@@ -37,7 +38,8 @@ const PREVIEW_MOCK_DATA = [
     matricula: 'MAT-3001',
     unidade_regiao: 'São Paulo - Matriz',
     tipo_vinculo: 'TITULAR',
-    faixa_etaria: '48-52',
+    faixa: '07',
+    faixa_etaria: '07',
     telefone: '(11) 3222-1199',
     celular: '(11) 97711-2233',
     email: 'valeria.castro@empresa.com.br',
@@ -52,7 +54,8 @@ const PREVIEW_MOCK_DATA = [
     matricula: 'MAT-3002',
     unidade_regiao: 'Campinas - Filial',
     tipo_vinculo: 'TITULAR',
-    faixa_etaria: '58-62',
+    faixa: '09',
+    faixa_etaria: '09',
     telefone: '(19) 3344-9988',
     celular: '(19) 98822-4455',
     email: 'rodrigo.prado@empresa.com.br',
@@ -67,7 +70,8 @@ const PREVIEW_MOCK_DATA = [
     matricula: 'MAT-3002-D1',
     unidade_regiao: 'Campinas - Filial',
     tipo_vinculo: 'DEPENDENTE',
-    faixa_etaria: '20-24',
+    faixa: '02',
+    faixa_etaria: '02',
     telefone: '(19) 3344-9988',
     celular: '(19) 98822-4456',
     email: 'larissa.prado@gmail.com',
@@ -82,7 +86,8 @@ const PREVIEW_MOCK_DATA = [
     matricula: 'MAT-3003',
     unidade_regiao: 'Santos - Porto',
     tipo_vinculo: 'TITULAR',
-    faixa_etaria: '39-43',
+    faixa: '06',
+    faixa_etaria: '06',
     telefone: '(13) 3219-5566',
     celular: '(13) 99111-8899',
     email: 'gabriel.neves@empresa.com.br',
@@ -153,7 +158,8 @@ export default function ImportarPlanilha() {
           matricula: row.matricula,
           unidade_regiao: row.unidade_regiao,
           tipo_vinculo: row.tipo_vinculo as 'TITULAR' | 'DEPENDENTE',
-          faixa_etaria: row.faixa_etaria,
+          faixa: row.faixa || row.faixa_etaria,
+          faixa_etaria: row.faixa || row.faixa_etaria,
           telefone: row.telefone,
           celular: row.celular,
           email: row.email,
@@ -315,7 +321,9 @@ export default function ImportarPlanilha() {
                           {row.tipo_vinculo}
                         </Badge>
                       </td>
-                      <td className="p-3 text-muted-foreground">{row.faixa_etaria}</td>
+                      <td className="p-3 text-teal-800 dark:text-teal-300 font-medium">
+                        {getFaixaLabel(row.faixa || row.faixa_etaria)}
+                      </td>
                       <td className="p-3 font-medium text-foreground">{row.condicao_principal}</td>
                       <td className="p-3">
                         <RiskBadge level={row.risco} size="sm" />

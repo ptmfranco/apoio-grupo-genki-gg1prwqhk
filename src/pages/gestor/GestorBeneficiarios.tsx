@@ -22,12 +22,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { RiscoBadge, StatusBeneficiarioBadge } from '@/components/common/Badges'
-import { Search, Plus, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, CheckCircle, XCircle, Filter } from 'lucide-react'
+import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
 
 export default function GestorBeneficiariosCrud() {
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([])
   const [atendentes, setAtendentes] = useState<User[]>([])
   const [search, setSearch] = useState('')
+  const [filtroFaixa, setFiltroFaixa] = useState<string>('TODAS')
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Beneficiario | null>(null)
@@ -39,7 +41,8 @@ export default function GestorBeneficiariosCrud() {
     id_externo: '',
     unidade_regiao: 'São Paulo - Matriz',
     tipo_vinculo: 'TITULAR',
-    faixa_etaria: '30-34',
+    faixa: '05',
+    faixa_etaria: '05',
     telefone: '',
     celular: '',
     email: '',
@@ -78,7 +81,8 @@ export default function GestorBeneficiariosCrud() {
       id_externo: `BENEF-${Math.floor(1000 + Math.random() * 9000)}`,
       unidade_regiao: 'São Paulo - Matriz',
       tipo_vinculo: 'TITULAR',
-      faixa_etaria: '30-34',
+      faixa: '05',
+      faixa_etaria: '05',
       telefone: '(11) 3322-1100',
       celular: '(11) 98877-6655',
       email: '',
@@ -95,7 +99,8 @@ export default function GestorBeneficiariosCrud() {
 
   const handleOpenEdit = (b: Beneficiario) => {
     setEditingItem(b)
-    setFormData({ ...b })
+    const normalized = normalizeFaixaId(b.faixa || b.faixa_etaria)
+    setFormData({ ...b, faixa: normalized, faixa_etaria: normalized })
     setDialogOpen(true)
   }
 
@@ -126,12 +131,21 @@ export default function GestorBeneficiariosCrud() {
     }
   }
 
-  const filtered = beneficiarios.filter(
-    (b) =>
-      b.nome_beneficiario.toLowerCase().includes(search.toLowerCase()) ||
+  const filtered = beneficiarios.filter((b) => {
+    const matchesSearch =
+      (b.nome || b.nome_beneficiario || '').toLowerCase().includes(search.toLowerCase()) ||
       b.matricula.toLowerCase().includes(search.toLowerCase()) ||
-      (b.condicao_principal || '').toLowerCase().includes(search.toLowerCase()),
-  )
+      (b.condicao_principal || '').toLowerCase().includes(search.toLowerCase())
+
+    if (!matchesSearch) return false
+
+    if (filtroFaixa !== 'TODAS') {
+      const bFaixaId = normalizeFaixaId(b.faixa || b.faixa_etaria)
+      if (bFaixaId !== filtroFaixa) return false
+    }
+
+    return true
+  })
 
   return (
     <div className="space-y-6">
@@ -153,8 +167,8 @@ export default function GestorBeneficiariosCrud() {
       </div>
 
       <Card className="border-slate-200">
-        <CardHeader className="p-4 border-b">
-          <div className="relative max-w-md">
+        <CardHeader className="p-4 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
             <Input
               placeholder="Pesquisar por nome, matrícula ou condição..."
@@ -162,6 +176,24 @@ export default function GestorBeneficiariosCrud() {
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 text-xs"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs font-semibold text-slate-600 whitespace-nowrap flex items-center gap-1">
+              <Filter className="w-3.5 h-3.5 text-slate-400" /> Faixa Etária:
+            </Label>
+            <Select value={filtroFaixa} onValueChange={setFiltroFaixa}>
+              <SelectTrigger className="w-[180px] text-xs h-9">
+                <SelectValue placeholder="Todas as Faixas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODAS">Todas as Faixas</SelectItem>
+                {FAIXAS_ETARIAS.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.id} - {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -172,6 +204,7 @@ export default function GestorBeneficiariosCrud() {
                   <th className="p-3.5">Matrícula</th>
                   <th className="p-3.5">Nome</th>
                   <th className="p-3.5">Vínculo</th>
+                  <th className="p-3.5">Faixa Etária</th>
                   <th className="p-3.5">Unidade</th>
                   <th className="p-3.5">Condição Principal</th>
                   <th className="p-3.5">Risco</th>
@@ -192,6 +225,9 @@ export default function GestorBeneficiariosCrud() {
                       {b.nome || b.nome_beneficiario}
                     </td>
                     <td className="p-3.5 text-xs text-slate-600">{b.vinculo || b.tipo_vinculo}</td>
+                    <td className="p-3.5 text-xs font-medium text-teal-800">
+                      {getFaixaLabel(b.faixa || b.faixa_etaria)}
+                    </td>
                     <td className="p-3.5 text-xs text-slate-600">
                       {b.unidade || b.unidade_regiao}
                     </td>
@@ -304,11 +340,23 @@ export default function GestorBeneficiariosCrud() {
 
               <div>
                 <Label className="text-xs font-semibold">Faixa Etária</Label>
-                <Input
-                  value={formData.faixa_etaria || ''}
-                  onChange={(e) => setFormData({ ...formData, faixa_etaria: e.target.value })}
-                  className="text-xs mt-1"
-                />
+                <Select
+                  value={normalizeFaixaId(formData.faixa || formData.faixa_etaria)}
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, faixa: val, faixa_etaria: val })
+                  }
+                >
+                  <SelectTrigger className="text-xs mt-1">
+                    <SelectValue placeholder="Selecione a faixa..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FAIXAS_ETARIAS.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {f.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

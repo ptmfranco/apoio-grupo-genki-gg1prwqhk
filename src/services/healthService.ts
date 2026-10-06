@@ -11,6 +11,7 @@ import type {
   LogAuditoria,
   UserPerfil,
 } from '@/types'
+import { normalizeFaixaId } from '@/constants/faixasEtarias'
 
 // Logger de auditoria
 export async function logAcao(
@@ -145,8 +146,13 @@ export async function getBeneficiarioById(id: string): Promise<Beneficiario> {
 }
 
 export async function createBeneficiario(data: Partial<Beneficiario>): Promise<Beneficiario> {
+  const rawFaixa = data.faixa || data.faixa_etaria
+  const normalizedFaixa = rawFaixa ? normalizeFaixaId(rawFaixa) : '05'
+
   const res = await pb.collection('beneficiarios').create<Beneficiario>({
     ...data,
+    faixa: normalizedFaixa,
+    faixa_etaria: normalizedFaixa,
     ativo: data.ativo ?? true,
   })
   await logAcao('CRIAR_BENEFICIARIO', 'beneficiarios', res.id, true, { matricula: res.matricula })
@@ -157,7 +163,14 @@ export async function updateBeneficiario(
   id: string,
   data: Partial<Beneficiario>,
 ): Promise<Beneficiario> {
-  const res = await pb.collection('beneficiarios').update<Beneficiario>(id, data)
+  const payload: any = { ...data }
+  if (data.faixa || data.faixa_etaria) {
+    const normalizedFaixa = normalizeFaixaId(data.faixa || data.faixa_etaria)
+    payload.faixa = normalizedFaixa
+    payload.faixa_etaria = normalizedFaixa
+  }
+
+  const res = await pb.collection('beneficiarios').update<Beneficiario>(id, payload)
   await logAcao('ATUALIZAR_BENEFICIARIO', 'beneficiarios', id, true, data)
   return res
 }

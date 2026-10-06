@@ -24,6 +24,7 @@ import {
   Stethoscope,
 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { getFaixaLabel } from '@/constants/faixasEtarias'
 
 export default function RhDistribuirPage() {
   const navigate = useNavigate()
@@ -298,7 +299,7 @@ export default function RhDistribuirPage() {
                           {b.unidade || b.unidade_regiao}
                         </td>
                         <td className="p-3.5 text-xs text-slate-600">
-                          {b.faixa || b.faixa_etaria}
+                          {getFaixaLabel(b.faixa || b.faixa_etaria)}
                         </td>
                         <td className="p-3.5 font-mono text-xs text-slate-600">
                           {b.celular || b.telefone || '—'}

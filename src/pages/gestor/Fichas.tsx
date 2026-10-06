@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { RiskBadge } from '@/components/common/RiskBadge'
 import { LgpdNotice } from '@/components/common/LgpdNotice'
+import { getFaixaLabel } from '@/constants/faixasEtarias'
 import {
   Dialog,
   DialogContent,
@@ -266,6 +267,17 @@ export default function FichasGestao() {
                   </span>
                   <span className="font-mono text-foreground font-semibold">
                     {selectedFicha.expand?.beneficiario_id?.matricula}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[10px] uppercase font-semibold">
+                    Faixa Etária
+                  </span>
+                  <span className="font-semibold text-teal-800 dark:text-teal-300">
+                    {getFaixaLabel(
+                      selectedFicha.expand?.beneficiario_id?.faixa ||
+                        selectedFicha.expand?.beneficiario_id?.faixa_etaria,
+                    )}
                   </span>
                 </div>
                 <div>

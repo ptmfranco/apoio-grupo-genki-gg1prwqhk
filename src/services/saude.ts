@@ -14,6 +14,7 @@ import {
   QuestionarioTemplate,
   RespostaQuestionario,
 } from '@/types/saude'
+import { normalizeFaixaId } from '@/constants/faixasEtarias'
 
 // Cache em memória para configurações dinâmicas de LGPD
 let lgpdConfigCache: Record<string, boolean> | null = null
@@ -209,6 +210,9 @@ export const BeneficiariosService = {
   },
 
   async create(data: Partial<Beneficiario>): Promise<Beneficiario> {
+    const rawFaixa = data.faixa || data.faixa_etaria
+    const normalizedFaixa = rawFaixa ? normalizeFaixaId(rawFaixa) : '05'
+
     const payload = {
       ...data,
       nome: data.nome || data.nome_beneficiario,
@@ -217,8 +221,8 @@ export const BeneficiariosService = {
       unidade_regiao: data.unidade || data.unidade_regiao,
       vinculo: data.vinculo || data.tipo_vinculo || 'TITULAR',
       tipo_vinculo: data.vinculo || data.tipo_vinculo || 'TITULAR',
-      faixa: data.faixa || data.faixa_etaria || '30-39',
-      faixa_etaria: data.faixa || data.faixa_etaria || '30-39',
+      faixa: normalizedFaixa,
+      faixa_etaria: normalizedFaixa,
       custo_12m: data.custo_12m !== undefined ? data.custo_12m : data.custo_12_meses,
       custo_12_meses: data.custo_12m !== undefined ? data.custo_12m : data.custo_12_meses,
     }
@@ -241,8 +245,9 @@ export const BeneficiariosService = {
       payload.tipo_vinculo = data.vinculo || data.tipo_vinculo
     }
     if (data.faixa || data.faixa_etaria) {
-      payload.faixa = data.faixa || data.faixa_etaria
-      payload.faixa_etaria = data.faixa || data.faixa_etaria
+      const normalizedFaixa = normalizeFaixaId(data.faixa || data.faixa_etaria)
+      payload.faixa = normalizedFaixa
+      payload.faixa_etaria = normalizedFaixa
     }
     if (data.custo_12m !== undefined || data.custo_12_meses !== undefined) {
       const v = data.custo_12m !== undefined ? data.custo_12m : data.custo_12_meses

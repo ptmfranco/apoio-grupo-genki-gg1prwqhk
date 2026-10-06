@@ -15,6 +15,7 @@ import {
   UserCheck,
   Building2,
 } from 'lucide-react'
+import { getFaixaLabel } from '@/constants/faixasEtarias'
 
 export default function RhDashboard() {
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([])
@@ -204,7 +205,9 @@ export default function RhDashboard() {
                       {b.nome || b.nome_beneficiario}
                     </td>
                     <td className="p-3.5 text-slate-600">{b.unidade || b.unidade_regiao}</td>
-                    <td className="p-3.5 text-slate-600">{b.faixa || b.faixa_etaria}</td>
+                    <td className="p-3.5 text-teal-800 dark:text-teal-300 font-medium">
+                      {getFaixaLabel(b.faixa || b.faixa_etaria)}
+                    </td>
                     <td className="p-3.5 text-slate-600 font-mono">
                       {b.celular || b.telefone || 'Não cadastrado'}
                     </td>

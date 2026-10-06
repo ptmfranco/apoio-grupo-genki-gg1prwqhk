@@ -65,6 +65,7 @@ export default function GestorRelatoriosPage() {
         Matricula: b.matricula,
         Nome: b.nome_beneficiario,
         Unidade: b.unidade_regiao,
+        FaixaEtaria: getFaixaLabel(b.faixa || b.faixa_etaria),
         Vinculo: b.tipo_vinculo,
         Risco: b.risco,
         Condicao: b.condicao_principal,
@@ -163,6 +164,7 @@ export default function GestorRelatoriosPage() {
                     <tr>
                       <th className="p-3">Matrícula</th>
                       <th className="p-3">Beneficiário</th>
+                      <th className="p-3">Faixa Etária</th>
                       <th className="p-3">Unidade</th>
                       <th className="p-3">Condição Principal</th>
                       <th className="p-3">Risco</th>
@@ -175,6 +177,9 @@ export default function GestorRelatoriosPage() {
                       <tr key={b.id} className="hover:bg-slate-50 text-xs">
                         <td className="p-3 font-mono">{b.matricula}</td>
                         <td className="p-3 font-medium text-slate-900">{b.nome_beneficiario}</td>
+                        <td className="p-3 font-medium text-teal-800">
+                          {getFaixaLabel(b.faixa || b.faixa_etaria)}
+                        </td>
                         <td className="p-3 text-slate-600">{b.unidade_regiao}</td>
                         <td className="p-3 text-slate-800 font-medium">{b.condicao_principal}</td>
                         <td className="p-3">{b.risco}</td>

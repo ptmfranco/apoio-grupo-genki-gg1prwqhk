@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { RiskBadge } from '@/components/common/RiskBadge'
 import { LgpdNotice } from '@/components/common/LgpdNotice'
+import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
 import {
   Dialog,
   DialogContent,
@@ -45,12 +46,14 @@ export default function GestaoBeneficiarios() {
   const [saving, setSaving] = useState(false)
 
   // Form State
+  const [filtroFaixa, setFiltroFaixa] = useState<string>('TODAS')
   const [formData, setFormData] = useState({
     nome_beneficiario: '',
     matricula: '',
     unidade_regiao: 'São Paulo - Matriz',
     tipo_vinculo: 'TITULAR',
-    faixa_etaria: '35-39',
+    faixa: '05',
+    faixa_etaria: '05',
     telefone: '',
     celular: '',
     email: '',
@@ -86,7 +89,8 @@ export default function GestaoBeneficiarios() {
       matricula: `MAT-${Math.floor(1000 + Math.random() * 9000)}`,
       unidade_regiao: 'São Paulo - Matriz',
       tipo_vinculo: 'TITULAR',
-      faixa_etaria: '35-39',
+      faixa: '05',
+      faixa_etaria: '05',
       telefone: '',
       celular: '',
       email: '',
@@ -102,12 +106,14 @@ export default function GestaoBeneficiarios() {
 
   const handleOpenEdit = (b: Beneficiario) => {
     setEditingItem(b)
+    const normalized = normalizeFaixaId(b.faixa || b.faixa_etaria)
     setFormData({
-      nome_beneficiario: b.nome_beneficiario,
+      nome_beneficiario: b.nome_beneficiario || b.nome || '',
       matricula: b.matricula,
-      unidade_regiao: b.unidade_regiao,
-      tipo_vinculo: b.tipo_vinculo,
-      faixa_etaria: b.faixa_etaria,
+      unidade_regiao: b.unidade_regiao || b.unidade || '',
+      tipo_vinculo: b.tipo_vinculo || b.vinculo || 'TITULAR',
+      faixa: normalized,
+      faixa_etaria: normalized,
       telefone: b.telefone || '',
       celular: b.celular || '',
       email: b.email || '',
@@ -177,12 +183,21 @@ export default function GestaoBeneficiarios() {
     }
   }
 
-  const filtered = beneficiarios.filter(
-    (b) =>
-      b.nome_beneficiario.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filtered = beneficiarios.filter((b) => {
+    const nome = b.nome_beneficiario || b.nome || ''
+    const unidade = b.unidade_regiao || b.unidade || ''
+    const matches =
+      nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.unidade_regiao.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+      unidade.toLowerCase().includes(searchTerm.toLowerCase())
+
+    if (!matches) return false
+    if (filtroFaixa !== 'TODAS') {
+      const bFaixa = normalizeFaixaId(b.faixa || b.faixa_etaria)
+      if (bFaixa !== filtroFaixa) return false
+    }
+    return true
+  })
 
   return (
     <div className="space-y-6">
@@ -206,9 +221,9 @@ export default function GestaoBeneficiarios() {
 
       <LgpdNotice perfil="GESTOR" />
 
-      {/* Busca */}
+      {/* Busca & Filtro Faixa */}
       <Card className="border-border shadow-sm">
-        <CardContent className="p-4 flex items-center justify-between">
+        <CardContent className="p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative w-full max-w-sm">
             <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
@@ -218,9 +233,29 @@ export default function GestaoBeneficiarios() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Total cadastrado: <span className="font-bold text-foreground">{filtered.length}</span>
-          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+              <Label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                Faixa:
+              </Label>
+              <select
+                value={filtroFaixa}
+                onChange={(e) => setFiltroFaixa(e.target.value)}
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+              >
+                <option value="TODAS">Todas as Faixas</option>
+                {FAIXAS_ETARIAS.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.id} - {f.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs text-muted-foreground whitespace-nowrap">
+              Total: <span className="font-bold text-foreground">{filtered.length}</span>
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -234,6 +269,7 @@ export default function GestaoBeneficiarios() {
                   <th className="p-3 font-semibold">Matrícula</th>
                   <th className="p-3 font-semibold">Nome Beneficiário</th>
                   <th className="p-3 font-semibold">Vínculo</th>
+                  <th className="p-3 font-semibold">Faixa Etária</th>
                   <th className="p-3 font-semibold">Unidade</th>
                   <th className="p-3 font-semibold">Contato</th>
                   <th className="p-3 font-semibold">Condição</th>
@@ -258,10 +294,13 @@ export default function GestaoBeneficiarios() {
                     </td>
                     <td className="p-3">
                       <Badge variant="outline" className="text-[10px]">
-                        {b.tipo_vinculo}
+                        {b.tipo_vinculo || b.vinculo}
                       </Badge>
                     </td>
-                    <td className="p-3 text-muted-foreground">{b.unidade_regiao}</td>
+                    <td className="p-3 text-teal-800 dark:text-teal-300 font-medium text-[11px]">
+                      {getFaixaLabel(b.faixa || b.faixa_etaria)}
+                    </td>
+                    <td className="p-3 text-muted-foreground">{b.unidade_regiao || b.unidade}</td>
                     <td className="p-3 text-muted-foreground">
                       <div>{b.celular || b.telefone}</div>
                     </td>
@@ -373,12 +412,23 @@ export default function GestaoBeneficiarios() {
 
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Faixa Etária</Label>
-                <Input
-                  value={formData.faixa_etaria}
-                  onChange={(e) => setFormData({ ...formData, faixa_etaria: e.target.value })}
-                  placeholder="Ex: 40-44"
-                  className="text-xs"
-                />
+                <select
+                  value={normalizeFaixaId(formData.faixa || formData.faixa_etaria)}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      faixa: e.target.value,
+                      faixa_etaria: e.target.value,
+                    })
+                  }
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
+                >
+                  {FAIXAS_ETARIAS.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-1">

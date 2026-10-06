@@ -24,6 +24,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { getFaixaLabel } from '@/constants/faixasEtarias'
 
 export default function GestorImportarPage() {
   const { user } = useAuth()
@@ -42,7 +43,8 @@ export default function GestorImportarPage() {
       matricula: 'MAT-3001',
       unidade_regiao: 'São Paulo - Matriz',
       tipo_vinculo: 'TITULAR',
-      faixa_etaria: '40-44',
+      faixa: '06',
+      faixa_etaria: '06',
       telefone: '(11) 3344-5566',
       celular: '(11) 97788-9900',
       email: 'claudia.duarte@empresa.com.br',
@@ -58,7 +60,8 @@ export default function GestorImportarPage() {
       matricula: 'MAT-3001-D1',
       unidade_regiao: 'São Paulo - Matriz',
       tipo_vinculo: 'DEPENDENTE',
-      faixa_etaria: '10-14',
+      faixa: '01',
+      faixa_etaria: '01',
       telefone: '(11) 3344-5566',
       celular: '(11) 97788-9900',
       email: 'claudia.duarte@empresa.com.br',
@@ -74,7 +77,8 @@ export default function GestorImportarPage() {
       matricula: 'MAT-3002',
       unidade_regiao: 'Curitiba - Fábrica',
       tipo_vinculo: 'TITULAR',
-      faixa_etaria: '50-54',
+      faixa: '08',
+      faixa_etaria: '08',
       telefone: '(41) 3456-1122',
       celular: '(41) 98877-2233',
       email: 'lucas.ribeiro@empresa.com.br',
@@ -90,7 +94,8 @@ export default function GestorImportarPage() {
       matricula: 'MAT-3003',
       unidade_regiao: 'Rio de Janeiro - Filial',
       tipo_vinculo: 'TITULAR',
-      faixa_etaria: '35-39',
+      faixa: '05',
+      faixa_etaria: '05',
       telefone: '(21) 2233-4455',
       celular: '(21) 99123-4567',
       email: 'renata.albuquerque@empresa.com.br',
@@ -106,7 +111,8 @@ export default function GestorImportarPage() {
       matricula: 'MAT-3004',
       unidade_regiao: 'Belo Horizonte - Operações',
       tipo_vinculo: 'TITULAR',
-      faixa_etaria: '60-64',
+      faixa: '10',
+      faixa_etaria: '10',
       telefone: '(31) 3211-9988',
       celular: '(31) 98711-2233',
       email: 'marcos.santos@empresa.com.br',
@@ -292,7 +298,7 @@ export default function GestorImportarPage() {
                     <th className="p-3">Nome</th>
                     <th className="p-3">Vínculo</th>
                     <th className="p-3">Unidade</th>
-                    <th className="p-3">Faixa</th>
+                    <th className="p-3">Faixa Etária</th>
                     <th className="p-3">Condição Principal</th>
                     <th className="p-3">Risco</th>
                     <th className="p-3">Custo 12 Meses</th>
@@ -305,7 +311,9 @@ export default function GestorImportarPage() {
                       <td className="p-3 font-medium text-slate-900">{row.nome_beneficiario}</td>
                       <td className="p-3 text-xs">{row.tipo_vinculo}</td>
                       <td className="p-3 text-xs">{row.unidade_regiao}</td>
-                      <td className="p-3 text-xs">{row.faixa_etaria}</td>
+                      <td className="p-3 text-xs font-medium text-teal-800">
+                        {getFaixaLabel(row.faixa || row.faixa_etaria)}
+                      </td>
                       <td className="p-3 text-xs text-slate-800 font-medium">
                         {row.condicao_principal}
                       </td>

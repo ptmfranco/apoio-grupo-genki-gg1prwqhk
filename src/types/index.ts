@@ -64,6 +64,8 @@ export type StatusBeneficiario =
 export type NivelRisco = 'BAIXO' | 'MEDIO' | 'ALTO' | 'CRITICO'
 export type TipoVinculo = 'TITULAR' | 'DEPENDENTE'
 
+export type FaixaEtariaId = '01' | '02' | '03' | '04' | '05' | '06' | '07' | '08' | '09' | '10'
+
 export interface Beneficiario {
   id: string
   id_externo?: string
@@ -74,7 +76,7 @@ export interface Beneficiario {
   unidade_regiao?: string
   vinculo?: TipoVinculo
   tipo_vinculo?: TipoVinculo
-  faixa?: string
+  faixa?: FaixaEtariaId | string
   faixa_etaria?: string
   telefone?: string
   celular?: string
