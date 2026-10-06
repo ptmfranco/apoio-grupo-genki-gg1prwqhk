@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { RiscoBadge } from '@/components/common/Badges'
+import { CidCombobox } from '@/components/common/CidCombobox'
 import { Search, Plus, Edit, Activity, Calendar } from 'lucide-react'
 
 export default function GestorProgramasCrud() {
@@ -241,13 +242,13 @@ export default function GestorProgramasCrud() {
 
             <div>
               <Label className="text-xs font-semibold">Linha de Cuidado / Condição Principal</Label>
-              <Input
-                value={formData.condicao_principal || ''}
-                onChange={(e) => setFormData({ ...formData, condicao_principal: e.target.value })}
-                placeholder="Ex: Programa de Gestão do Diabetes e Risco Cardiovascular"
-                required
-                className="text-xs mt-1"
-              />
+              <div className="mt-1">
+                <CidCombobox
+                  value={formData.condicao_principal || ''}
+                  onChange={(val) => setFormData({ ...formData, condicao_principal: val })}
+                  placeholder="Selecione ou busque por CID-10 ou condição clínica..."
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

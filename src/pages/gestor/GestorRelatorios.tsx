@@ -68,7 +68,14 @@ export default function GestorRelatoriosPage() {
       const matchRegiao = filtroRegiao === 'ALL' || (b.unidade_regiao || '').includes(filtroRegiao)
       const matchFaixa =
         filtroFaixa === 'ALL' || normalizeFaixaId(b.faixa || b.faixa_etaria) === filtroFaixa
-      return matchRegiao && matchFaixa
+      let matchCondicao = true
+      if (filtroCondicao && filtroCondicao.trim()) {
+        const c = (b.condicao_principal || '').toLowerCase()
+        const term = filtroCondicao.trim().toLowerCase()
+        const parts = term.split('—').map((s) => s.trim().toLowerCase())
+        matchCondicao = parts.some((p) => p && c.includes(p)) || c.includes(term)
+      }
+      return matchRegiao && matchFaixa && matchCondicao
     })
 
     if (tipo === 'acompanhamento') {

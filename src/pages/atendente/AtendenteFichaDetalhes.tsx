@@ -22,6 +22,7 @@ import {
   RespostaQuestionario,
 } from '@/types/saude'
 import { QuestionarioClinico } from '@/components/common/QuestionarioClinico'
+import { CidCombobox } from '@/components/common/CidCombobox'
 import { getFaixaLabel } from '@/constants/faixasEtarias'
 import {
   Card,
@@ -504,14 +505,19 @@ export default function AtendenteFichaDetalhesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs font-semibold">Condição Principal Identificada</Label>
-                    <Input
-                      value={formData.condicao_principal || ''}
-                      onChange={(e) =>
-                        setFormData({ ...formData, condicao_principal: e.target.value })
-                      }
-                      placeholder="Ex: Hipertensão Severa em descompensação"
-                      className="text-xs mt-1"
-                    />
+                    <div className="mt-1">
+                      <CidCombobox
+                        value={formData.condicao_principal || ''}
+                        onChange={async (val) => {
+                          setFormData((prev) => ({ ...prev, condicao_principal: val }))
+                          if (val) {
+                            const tpl = await QuestionariosService.getTemplatePorCondicao(val)
+                            setCurrentTemplate(tpl)
+                          }
+                        }}
+                        placeholder="Buscar por código CID-10 ou descrição da condição..."
+                      />
+                    </div>
                   </div>
 
                   <div>

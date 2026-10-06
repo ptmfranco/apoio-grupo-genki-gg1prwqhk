@@ -14,8 +14,19 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { RiscoBadge, StatusGeralBadge } from '@/components/common/Badges'
-import { Search, Plus, Star, Phone, MessageCircle, Mail, MessageSquare, Filter } from 'lucide-react'
+import {
+  Search,
+  Plus,
+  Star,
+  Phone,
+  MessageCircle,
+  Mail,
+  MessageSquare,
+  Filter,
+  X,
+} from 'lucide-react'
 import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
+import { CidCombobox } from '@/components/common/CidCombobox'
 
 export default function AtendenteFichasPage() {
   const { user } = useAuth()
@@ -23,6 +34,7 @@ export default function AtendenteFichasPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [faixaFilter, setFaixaFilter] = useState('ALL')
+  const [condicaoFilter, setCondicaoFilter] = useState('')
   const [loading, setLoading] = useState(true)
 
   const loadData = async () => {
@@ -52,7 +64,15 @@ export default function AtendenteFichasPage() {
     const bFaixa = f.expand?.beneficiario_id?.faixa || f.expand?.beneficiario_id?.faixa_etaria
     const matchesFaixa = faixaFilter === 'ALL' || normalizeFaixaId(bFaixa) === faixaFilter
 
-    return matchesSearch && matchesStatus && matchesFaixa
+    let matchesCondicao = true
+    if (condicaoFilter && condicaoFilter.trim()) {
+      const c = (f.condicao_principal || '').toLowerCase()
+      const term = condicaoFilter.trim().toLowerCase()
+      const parts = term.split('—').map((s) => s.trim().toLowerCase())
+      matchesCondicao = parts.some((p) => p && c.includes(p)) || c.includes(term)
+    }
+
+    return matchesSearch && matchesStatus && matchesFaixa && matchesCondicao
   })
 
   return (
@@ -75,14 +95,22 @@ export default function AtendenteFichasPage() {
 
       <Card className="border-slate-200">
         <CardContent className="p-4 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
               <Input
-                placeholder="Buscar por ID, paciente ou diagnóstico..."
+                placeholder="Buscar por ID ou paciente..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 text-xs"
+              />
+            </div>
+
+            <div>
+              <CidCombobox
+                value={condicaoFilter}
+                onChange={setCondicaoFilter}
+                placeholder="Filtrar por CID-10 / Condição..."
               />
             </div>
 
@@ -114,6 +142,21 @@ export default function AtendenteFichasPage() {
               </SelectContent>
             </Select>
           </div>
+
+          {condicaoFilter && (
+            <div className="flex items-center gap-2 pt-1 text-xs text-teal-800 bg-teal-50 px-3 py-1.5 rounded border border-teal-200">
+              <span className="font-semibold">Filtro CID-10 ativo:</span>
+              <span className="truncate max-w-md">{condicaoFilter}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCondicaoFilter('')}
+                className="h-5 px-1 text-teal-700 hover:text-teal-900 ml-auto"
+              >
+                <X className="w-3.5 h-3.5 mr-1" /> Limpar filtro
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
