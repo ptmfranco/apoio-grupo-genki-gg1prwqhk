@@ -1,21 +1,18 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 /**
- * Hook para atualização de usuários por SUPERUSUARIO ou pelo próprio usuário.
+ * Hook para atualização e redefinição de credenciais de usuários pelo SUPERUSUARIO.
  *
- * No PocketBase, coleções do tipo 'auth' exigem 'oldPassword' quando uma requisição
- * não-admin tenta alterar o e-mail ou a senha de um usuário. Como o SUPERUSUARIO
- * é autenticado via users (perfil SUPERUSUARIO) e precisa redefinir senhas ou atualizar
- * e-mails sem conhecer a senha atual do colaborador, interceptamos a requisição
- * no onRecordUpdateRequest('users') ou fornecemos rota dedicada.
- *
- * No hook onRecordUpdateRequest:
- * - Se o chamador autenticado for SUPERUSUARIO:
- *   PocketBase aplica as validações de oldPassword se os campos 'email' ou 'password'
- *   estiverem no body da requisição pública de usuário comum.
- *   Para contornar com total segurança e sem exigir oldPassword:
- *   se o body contiver 'password' / 'email', e o auth for SUPERUSUARIO,
- *   podemos aplicar as alterações via $app com privilégios de sistema ou tratar os campos.
+ * No PocketBase, requisições de update na coleção 'users' (_pb_users_auth_)
+ * exigem 'oldPassword' sempre que os campos 'email', 'password' ou 'passwordConfirm'
+ * são enviados no corpo da requisição e o chamador não é um superuser nativo do PocketBase.
+ * Como o SUPERUSUARIO do sistema é autenticado na coleção users (perfil = 'SUPERUSUARIO'),
+ * interceptamos a requisição antes da validação nativa:
+ * - Se for SUPERUSUARIO editando OUTRO usuário:
+ *   aplica as alterações com privilégios elevados via $app.save (sem exigir oldPassword).
+ * - Se o usuário estiver editando a si mesmo:
+ *   mantém a exigência do PocketBase de oldPassword caso esteja alterando e-mail ou senha.
+ * - Limpa campos vazios e e-mails inalterados para evitar erros espúrios de validação.
  */
 
 onRecordUpdateRequest((e) => {
@@ -30,73 +27,66 @@ onRecordUpdateRequest((e) => {
   const targetRecord = e.record
   const isSelf = authRecord.id === targetRecord.id
 
-  // Se não for superusuario nem o próprio usuário, o updateRule do PocketBase cuidará
-  // Se for SUPERUSUARIO editando outro usuário (ou a si mesmo):
-  // O PocketBase exige oldPassword se password ou email forem enviados em requisições de non-superusers.
-  // Podemos inspecionar os dados enviados:
   const body = e.requestInfo().body || {}
-  const targetEmail = body.email ? String(body.email).trim().toLowerCase() : ''
-  const currentEmail = targetRecord.email()
-  const emailChanged = targetEmail !== '' && targetEmail !== currentEmail.toLowerCase()
+  const rawEmail =
+    body.email !== undefined && body.email !== null ? String(body.email).trim().toLowerCase() : ''
+  const currentEmail = (targetRecord.email() || '').trim().toLowerCase()
+  const emailChanged = rawEmail !== '' && rawEmail !== currentEmail
 
-  const newPassword = body.password ? String(body.password).trim() : ''
-  const passwordConfirm = body.passwordConfirm ? String(body.passwordConfirm).trim() : ''
+  const rawPassword =
+    body.password !== undefined && body.password !== null ? String(body.password).trim() : ''
+  const rawPasswordConfirm =
+    body.passwordConfirm !== undefined && body.passwordConfirm !== null
+      ? String(body.passwordConfirm).trim()
+      : ''
+  const hasNewPassword = rawPassword.length > 0
 
-  // Se for SUPERUSUARIO e houver alteração de senha ou de e-mail em outro usuário:
+  // 1. SUPERUSUARIO editando OUTRO usuário:
+  // Permitir redefinição de e-mail e senha sem exigir oldPassword.
   if (isSuperUser && !isSelf) {
-    // Se o super usuário está definindo uma nova senha para outro usuário
-    if (newPassword) {
-      if (newPassword.length < 8) {
+    let needsManualSave = false
+
+    if (hasNewPassword) {
+      if (rawPassword.length < 8) {
         throw new BadRequestError('A nova senha deve ter no mínimo 8 caracteres.')
       }
-      if (passwordConfirm && newPassword !== passwordConfirm) {
+      if (rawPasswordConfirm && rawPassword !== rawPasswordConfirm) {
         throw new BadRequestError('A confirmação de senha não confere.')
       }
-      targetRecord.setPassword(newPassword)
+      targetRecord.setPassword(rawPassword)
+      needsManualSave = true
     }
 
-    // Se o super usuário está alterando o e-mail de outro usuário
     if (emailChanged) {
-      targetRecord.setEmail(targetEmail)
+      targetRecord.setEmail(rawEmail)
+      needsManualSave = true
     }
 
-    // Remover password e email do body / requisição para que o validador padrão de auth
-    // do PocketBase não exija oldPassword
-    // No PocketBase Goja runtime, e.record já tem as alterações setadas via setPassword/setEmail.
-    // Limpar os campos do payload que disparam a checagem de oldPassword:
-    if (body.password !== undefined) {
-      delete body.password
+    // Se houve alteração de senha ou e-mail, salvar diretamente com $app
+    // e remover esses campos do body para não disparar a validação nativa de oldPassword
+    if (needsManualSave) {
+      // Salva diretamente o targetRecord com as novas credenciais
+      $app.save(targetRecord)
     }
-    if (body.passwordConfirm !== undefined) {
-      delete body.passwordConfirm
-    }
-    if (body.oldPassword !== undefined) {
-      delete body.oldPassword
-    }
-    if (!emailChanged && body.email !== undefined) {
-      // Se não mudou, remove para não disparar validação de e-mail do auth record
-      delete body.email
-    }
-  } else if (isSuperUser && isSelf) {
-    // Super usuário editando a si mesmo:
-    // Se não enviou senha nova nem mudou e-mail, limpar campos vazios para não disparar validação
-    if (!newPassword && body.password !== undefined) {
-      delete body.password
-    }
-    if (!newPassword && body.passwordConfirm !== undefined) {
-      delete body.passwordConfirm
-    }
-    if (!emailChanged && body.email !== undefined) {
+
+    // Remove do body para que a continuidade do pipeline de update não tente validar oldPassword
+    delete body.password
+    delete body.passwordConfirm
+    delete body.oldPassword
+    if (!emailChanged || needsManualSave) {
       delete body.email
     }
   } else {
-    // Usuário comum editando a si mesmo:
-    if (!newPassword && body.password !== undefined) {
+    // 2. Edição de si mesmo ou outro usuário comum:
+    // Se não informou nova senha, remover password/passwordConfirm vazios do body
+    if (!hasNewPassword) {
       delete body.password
-    }
-    if (!newPassword && body.passwordConfirm !== undefined) {
       delete body.passwordConfirm
+      if (body.oldPassword !== undefined && !body.oldPassword) {
+        delete body.oldPassword
+      }
     }
+    // Se o e-mail não foi alterado, remover do body para não disparar "Values don't match" ou oldPassword
     if (!emailChanged && body.email !== undefined) {
       delete body.email
     }

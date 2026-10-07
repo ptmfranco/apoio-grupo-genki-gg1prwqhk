@@ -415,7 +415,14 @@ export const UsuariosService = {
     return record as unknown as User
   },
 
-  async update(id: string, data: Partial<User> & { password?: string }): Promise<User> {
+  async update(
+    id: string,
+    data: Partial<User> & {
+      password?: string
+      passwordConfirm?: string
+      oldPassword?: string
+    },
+  ): Promise<User> {
     const cleanId = (id || '').trim()
     if (!cleanId) {
       throw new Error('ID do usuário não informado para atualização.')
@@ -424,7 +431,9 @@ export const UsuariosService = {
     const payload: Record<string, any> = {}
 
     if (data.name !== undefined) payload.name = data.name.trim()
-    if (data.email !== undefined) payload.email = data.email.trim().toLowerCase()
+    if (data.email !== undefined && data.email.trim() !== '') {
+      payload.email = data.email.trim().toLowerCase()
+    }
     if (data.perfil !== undefined) {
       const rawPerfil = data.perfil
       if (rawPerfil === 'SUPERUSUARIO') payload.perfil = 'SUPERUSUARIO'
@@ -459,13 +468,72 @@ export const UsuariosService = {
       payload.ativo = Boolean(data.ativo)
     }
 
-    if (data.password && data.password.trim().length >= 8) {
+    if (data.password && data.password.trim() !== '') {
       payload.password = data.password.trim()
-      payload.passwordConfirm = data.password.trim()
+      payload.passwordConfirm = data.passwordConfirm
+        ? data.passwordConfirm.trim()
+        : data.password.trim()
+    }
+    if (data.oldPassword && data.oldPassword.trim() !== '') {
+      payload.oldPassword = data.oldPassword.trim()
     }
 
-    const record = await pb.collection('users').update(cleanId, payload)
-    return record as unknown as User
+    // Usar o endpoint seguro customizado do Skip Cloud pb_hooks
+    // Esse endpoint permite que o SUPERUSUARIO altere senhas e e-mails de outros usuários
+    // sem disparar o erro de 'oldPassword' nem conflitos de campos.
+    try {
+      const res = await pb.send<User>(`/backend/v1/users/${encodeURIComponent(cleanId)}/update`, {
+        method: 'POST',
+        body: payload,
+      })
+      return res
+    } catch (endpointErr: any) {
+      // Se por algum motivo de fallback a rota customizada falhar com 404, tenta via collection SDK normal
+      let finalErr = endpointErr
+      if (endpointErr?.status === 404) {
+        try {
+          const record = await pb.collection('users').update(cleanId, payload)
+          return record as unknown as User
+        } catch (sdkErr: any) {
+          finalErr = sdkErr
+        }
+      }
+
+      const status = finalErr?.status || finalErr?.statusCode
+      if (status === 401) {
+        throw new Error('Sessão expirada. Faça login novamente.')
+      }
+      if (status === 403) {
+        throw new Error(
+          'Acesso negado. Apenas o Super Usuário tem permissão para gerenciar usuários.',
+        )
+      }
+      if (status === 404) {
+        throw new Error('Usuário não encontrado.')
+      }
+
+      const detail = finalErr?.data?.data
+      if (detail && typeof detail === 'object') {
+        const msgs: string[] = []
+        for (const [k, v] of Object.entries(detail) as [string, any][]) {
+          let msg = v?.message || String(v)
+          if (msg.includes("Values don't match")) {
+            msg = 'Os valores não conferem.'
+          } else if (msg.includes('Cannot be blank')) {
+            msg = 'Campo obrigatório.'
+          }
+          if (k === 'email') msgs.push(`E-mail: ${msg}`)
+          else if (k === 'oldPassword') msgs.push(`Senha atual: ${msg}`)
+          else if (k === 'password') msgs.push(`Nova senha: ${msg}`)
+          else msgs.push(`${k}: ${msg}`)
+        }
+        if (msgs.length > 0) {
+          throw new Error(`Erro nos campos: ${msgs.join(', ')}`)
+        }
+      }
+
+      throw new Error(finalErr?.message || 'Erro ao atualizar dados do usuário.')
+    }
   },
 
   async toggleAtivo(id: string, ativo: boolean): Promise<User> {

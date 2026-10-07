@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import pb from '@/lib/pocketbase/client'
 import {
   getUsuarios,
   createUsuario,
@@ -45,18 +46,25 @@ export default function GestaoUsuarios() {
   const [editingItem, setEditingItem] = useState<User | null>(null)
   const [saving, setSaving] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
+  const [showOldPassword, setShowOldPassword] = useState(false)
+
+  const isEditingSelf = Boolean(
+    editingItem && pb.authStore.record && editingItem.id === pb.authStore.record.id,
+  )
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    perfil: 'ATENDENTE' as UserPerfil,
+    passwordConfirm: '',
+    oldPassword: '',
+    perfil: 'GESTOR_VENART' as UserPerfil,
     tipo_profissional: 'ENFERMEIRO' as TipoProfissional,
     registro_profissional: '',
-    unidade_regiao: 'São Paulo',
+    unidade_regiao: '',
     ativo: true,
   })
-
   const loadData = async () => {
     try {
       setLoading(true)
@@ -76,14 +84,19 @@ export default function GestaoUsuarios() {
 
   const handleOpenCreate = () => {
     setEditingItem(null)
+    setShowPassword(false)
+    setShowPasswordConfirm(false)
+    setShowOldPassword(false)
     setFormData({
       name: '',
       email: '',
-      password: 'senha' + Math.floor(100000 + Math.random() * 900000),
+      password: '',
+      passwordConfirm: '',
+      oldPassword: '',
       perfil: 'OPERACAO',
       tipo_profissional: 'ENFERMEIRO',
       registro_profissional: '',
-      unidade_regiao: 'São Paulo',
+      unidade_regiao: '',
       ativo: true,
     })
     setModalOpen(true)
@@ -91,12 +104,17 @@ export default function GestaoUsuarios() {
 
   const handleOpenEdit = (u: User) => {
     setEditingItem(u)
+    setShowPassword(false)
+    setShowPasswordConfirm(false)
+    setShowOldPassword(false)
     setFormData({
       name: u.name,
       email: u.email,
       password: '',
-      perfil: (u.perfil || 'OPERACAO') as UserPerfil,
-      tipo_profissional: (u.tipo_profissional || 'ENFERMEIRO') as TipoProfissional,
+      passwordConfirm: '',
+      oldPassword: '',
+      perfil: u.perfil || 'GESTOR_VENART',
+      tipo_profissional: u.tipo_profissional || 'ENFERMEIRO',
       registro_profissional: u.registro_profissional || '',
       unidade_regiao: u.unidade_regiao || 'São Paulo',
       ativo: u.ativo ?? true,
@@ -106,25 +124,62 @@ export default function GestaoUsuarios() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const newPass = formData.password?.trim() || ''
+    const confirmPass = formData.passwordConfirm?.trim() || ''
+    const oldPass = formData.oldPassword?.trim() || ''
+
+    if (newPass) {
+      if (newPass.length < 8) {
+        toast.error('A nova senha deve ter no mínimo 8 caracteres.')
+        return
+      }
+      if (confirmPass && newPass !== confirmPass) {
+        toast.error('A confirmação de senha não confere.')
+        return
+      }
+      if (isEditingSelf && !oldPass) {
+        toast.error('Informe sua senha atual (oldPassword) para alterar sua senha.')
+        return
+      }
+    }
+
     try {
       setSaving(true)
       if (editingItem) {
         if (!editingItem.id) {
           throw new Error('ID do usuário ausente para atualização.')
         }
-        await updateUsuario(editingItem.id, {
+
+        const payloadToUpdate: any = {
           name: formData.name,
           perfil: formData.perfil,
           tipo_profissional: formData.tipo_profissional,
           registro_profissional: formData.registro_profissional,
           unidade_regiao: formData.unidade_regiao,
           ativo: formData.ativo,
-          ...(formData.password ? { password: formData.password } : {}),
-        })
+        }
+
+        const newEmailClean = formData.email?.trim().toLowerCase()
+        const oldEmailClean = (editingItem.email || '').trim().toLowerCase()
+        if (newEmailClean && newEmailClean !== oldEmailClean) {
+          payloadToUpdate.email = newEmailClean
+        }
+
+        if (newPass) {
+          payloadToUpdate.password = newPass
+          payloadToUpdate.passwordConfirm = confirmPass || newPass
+          if (isEditingSelf && oldPass) {
+            payloadToUpdate.oldPassword = oldPass
+          }
+        }
+
+        await updateUsuario(editingItem.id, payloadToUpdate)
         toast.success('Usuário atualizado com sucesso!')
       } else {
         await createUsuario({
           ...formData,
+          password: newPass || undefined,
           tema_preferido: 'LIGHT',
           categoria_profissional:
             formData.perfil === 'OPERACAO'
@@ -342,13 +397,48 @@ export default function GestaoUsuarios() {
                 />
               </div>
 
-              {!editingItem && (
+              {/* Senha Atual (apenas para própria conta se for mudar a senha) */}
+              {isEditingSelf && (
+                <div className="p-2.5 rounded-md bg-amber-50 border border-amber-200 space-y-1">
+                  <Label className="text-xs font-semibold text-amber-900">
+                    Senha Atual (obrigatória apenas para alterar sua própria senha)
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type={showOldPassword ? 'text' : 'password'}
+                      value={formData.oldPassword}
+                      onChange={(e) => setFormData({ ...formData, oldPassword: e.target.value })}
+                      placeholder="Sua senha atual"
+                      className="text-xs font-mono pr-9 bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowOldPassword(!showOldPassword)}
+                      className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-hidden"
+                      title={showOldPassword ? 'Ocultar senha' : 'Exibir senha'}
+                      aria-label={showOldPassword ? 'Ocultar senha' : 'Exibir senha'}
+                    >
+                      {showOldPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Nova Senha & Confirmação */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Senha Inicial</Label>
+                  <Label className="text-xs font-semibold">
+                    {editingItem ? 'Nova Senha' : 'Senha Inicial'}
+                  </Label>
                   <div className="relative">
                     <Input
                       type={showPassword ? 'text' : 'password'}
-                      required
+                      required={!editingItem}
+                      placeholder={editingItem ? 'Em branco = manter' : 'Mínimo 8 caracteres'}
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className="text-xs font-mono pr-9"
@@ -364,7 +454,37 @@ export default function GestaoUsuarios() {
                     </button>
                   </div>
                 </div>
-              )}
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Confirmar Senha</Label>
+                  <div className="relative">
+                    <Input
+                      type={showPasswordConfirm ? 'text' : 'password'}
+                      placeholder="Repita a nova senha"
+                      value={formData.passwordConfirm}
+                      onChange={(e) =>
+                        setFormData({ ...formData, passwordConfirm: e.target.value })
+                      }
+                      className="text-xs font-mono pr-9"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                      className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-hidden"
+                      title={showPasswordConfirm ? 'Ocultar confirmação' : 'Exibir confirmação'}
+                      aria-label={
+                        showPasswordConfirm ? 'Ocultar confirmação' : 'Exibir confirmação'
+                      }
+                    >
+                      {showPasswordConfirm ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Perfil RBAC</Label>

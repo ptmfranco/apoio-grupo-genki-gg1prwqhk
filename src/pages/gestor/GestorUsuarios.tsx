@@ -36,10 +36,18 @@ export default function GestorUsuariosCrud() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<User | null>(null)
 
-  const [formData, setFormData] = useState<Partial<User> & { password?: string }>({
+  const [formData, setFormData] = useState<
+    Partial<User> & {
+      password?: string
+      passwordConfirm?: string
+      oldPassword?: string
+    }
+  >({
     name: '',
     email: '',
     password: '',
+    passwordConfirm: '',
+    oldPassword: '',
     perfil: 'OPERACAO',
     tipo_profissional: 'ENFERMEIRO',
     categoria_profissional: 'ENFERMEIRO',
@@ -49,8 +57,15 @@ export default function GestorUsuariosCrud() {
     ativo: true,
   })
   const [showPassword, setShowPassword] = useState(false)
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
+  const [showOldPassword, setShowOldPassword] = useState(false)
   const [savingUser, setSavingUser] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  // Identificar se o usuário sendo editado é a própria conta conectada
+  const isEditingSelf = Boolean(
+    editingItem && pb.authStore.record && editingItem.id === pb.authStore.record.id,
+  )
 
   const checkAuthOrRedirect = (): boolean => {
     if (!pb.authStore.isValid || !pb.authStore.record) {
@@ -92,10 +107,15 @@ export default function GestorUsuariosCrud() {
   const handleOpenCreate = () => {
     setEditingItem(null)
     setErrorMessage(null)
+    setShowPassword(false)
+    setShowPasswordConfirm(false)
+    setShowOldPassword(false)
     setFormData({
       name: '',
       email: '',
       password: '',
+      passwordConfirm: '',
+      oldPassword: '',
       perfil: 'OPERACAO',
       tipo_profissional: 'ENFERMEIRO',
       categoria_profissional: 'ENFERMEIRO',
@@ -111,10 +131,14 @@ export default function GestorUsuariosCrud() {
     setEditingItem(u)
     setErrorMessage(null)
     setShowPassword(false)
+    setShowPasswordConfirm(false)
+    setShowOldPassword(false)
     setFormData({
       name: u.name || '',
       email: u.email || '',
       password: '',
+      passwordConfirm: '',
+      oldPassword: '',
       perfil: u.perfil || 'GESTOR_VENART',
       tipo_profissional: u.tipo_profissional || 'ENFERMEIRO',
       categoria_profissional: u.categoria_profissional || 'ADMINISTRATIVO',
@@ -130,6 +154,32 @@ export default function GestorUsuariosCrud() {
     e.preventDefault()
     if (!checkAuthOrRedirect()) return
 
+    // Validação de senhas no frontend antes de enviar
+    const newPass = formData.password?.trim() || ''
+    const confirmPass = formData.passwordConfirm?.trim() || ''
+    const oldPass = formData.oldPassword?.trim() || ''
+
+    if (newPass) {
+      if (newPass.length < 8) {
+        const msg = 'A nova senha deve ter no mínimo 8 caracteres.'
+        setErrorMessage(msg)
+        toast.error(msg)
+        return
+      }
+      if (confirmPass && newPass !== confirmPass) {
+        const msg = 'A confirmação de senha não confere com a nova senha digitada.'
+        setErrorMessage(msg)
+        toast.error(msg)
+        return
+      }
+      if (isEditingSelf && !oldPass) {
+        const msg = 'Ao alterar sua própria senha, informe sua senha atual (oldPassword).'
+        setErrorMessage(msg)
+        toast.error(msg)
+        return
+      }
+    }
+
     setSavingUser(true)
     setErrorMessage(null)
     try {
@@ -137,10 +187,41 @@ export default function GestorUsuariosCrud() {
         if (!editingItem.id) {
           throw new Error('Identificador do usuário ausente na edição.')
         }
-        await UsuariosService.update(editingItem.id, formData)
+
+        // Montar payload limpo:
+        // NÃO enviar email caso não tenha mudado para não disparar validação de auth record
+        const payloadToUpdate: any = {
+          name: formData.name?.trim(),
+          perfil: formData.perfil,
+          tipo_profissional: formData.tipo_profissional,
+          categoria_profissional: formData.categoria_profissional,
+          registro_profissional: formData.registro_profissional?.trim(),
+          unidade_regiao: formData.unidade_regiao?.trim(),
+          tema_preferido: formData.tema_preferido,
+          ativo: formData.ativo,
+        }
+
+        const newEmailClean = formData.email?.trim().toLowerCase()
+        const oldEmailClean = (editingItem.email || '').trim().toLowerCase()
+        if (newEmailClean && newEmailClean !== oldEmailClean) {
+          payloadToUpdate.email = newEmailClean
+        }
+
+        if (newPass) {
+          payloadToUpdate.password = newPass
+          payloadToUpdate.passwordConfirm = confirmPass || newPass
+          if (isEditingSelf && oldPass) {
+            payloadToUpdate.oldPassword = oldPass
+          }
+        }
+
+        await UsuariosService.update(editingItem.id, payloadToUpdate)
         toast.success(`Usuário ${formData.name || ''} atualizado com sucesso!`)
       } else {
-        await UsuariosService.create(formData)
+        await UsuariosService.create({
+          ...formData,
+          password: newPass || undefined,
+        })
         toast.success(`Novo usuário ${formData.name || ''} criado com sucesso!`)
       }
       setDialogOpen(false)
@@ -342,27 +423,88 @@ export default function GestorUsuariosCrud() {
               />
             </div>
 
-            <div>
-              <Label className="text-xs font-semibold">
-                Senha {editingItem ? '(deixe em branco para não alterar)' : ''}
-              </Label>
-              <div className="relative mt-1">
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password || ''}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Mínimo 8 caracteres"
-                  className="text-xs pr-9"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-hidden"
-                  title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
-                  aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+            {/* Campo de Senha Atual (exigido SOMENTE se for o próprio usuário alterando a própria senha) */}
+            {isEditingSelf && (
+              <div className="p-2.5 rounded-md bg-amber-50/70 border border-amber-200/70 space-y-1">
+                <Label className="text-xs font-semibold text-amber-900">
+                  Senha Atual (obrigatória apenas se for alterar a própria senha)
+                </Label>
+                <div className="relative mt-1">
+                  <Input
+                    type={showOldPassword ? 'text' : 'password'}
+                    value={formData.oldPassword || ''}
+                    onChange={(e) => setFormData({ ...formData, oldPassword: e.target.value })}
+                    placeholder="Digite sua senha atual"
+                    className="text-xs pr-9 bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOldPassword(!showOldPassword)}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-hidden"
+                    title={showOldPassword ? 'Ocultar senha' : 'Exibir senha'}
+                    aria-label={showOldPassword ? 'Ocultar senha' : 'Exibir senha'}
+                  >
+                    {showOldPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Nova Senha & Confirmação de Senha */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-semibold">
+                  {editingItem ? 'Nova Senha' : 'Senha Inicial'}
+                </Label>
+                <div className="relative mt-1">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password || ''}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder={editingItem ? 'Em branco = não alterar' : 'Mínimo 8 caracteres'}
+                    className="text-xs pr-9"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-hidden"
+                    title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+                    aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {editingItem && (
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    O Super Usuário pode redefinir sem saber a senha anterior
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold">Confirmar Nova Senha</Label>
+                <div className="relative mt-1">
+                  <Input
+                    type={showPasswordConfirm ? 'text' : 'password'}
+                    value={formData.passwordConfirm || ''}
+                    onChange={(e) => setFormData({ ...formData, passwordConfirm: e.target.value })}
+                    placeholder="Repita a nova senha"
+                    className="text-xs pr-9"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-hidden"
+                    title={showPasswordConfirm ? 'Ocultar confirmação' : 'Exibir confirmação'}
+                    aria-label={showPasswordConfirm ? 'Ocultar confirmação' : 'Exibir confirmação'}
+                  >
+                    {showPasswordConfirm ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
