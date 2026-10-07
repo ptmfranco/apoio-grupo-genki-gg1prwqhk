@@ -52,13 +52,27 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
   // Menus customizados para os perfis
+  const superUsuarioNav: NavItem[] = [
+    { label: 'Visão Geral (Venart)', href: '/gestor', icon: LayoutDashboard },
+    { label: 'Gestão de Usuários', href: '/gestor/usuarios', icon: UserCheck },
+    { label: 'Importar Lotes', href: '/gestor/importar', icon: Upload },
+    { label: 'Catálogo CID-10', href: '/gestor/cid10', icon: Stethoscope },
+    { label: 'Selecionar Elegíveis', href: '/gestor/selecionar', icon: CheckSquare },
+    { label: 'Beneficiários', href: '/gestor/beneficiarios', icon: Users },
+    { label: 'Gestão de Questionários', href: '/gestor/questionarios', icon: ClipboardList },
+    { label: 'Fichas de Cuidado', href: '/gestor/fichas', icon: FileText },
+    { label: 'Planos de Ação', href: '/gestor/planos-acao', icon: Target },
+    { label: 'Controle de Programas', href: '/gestor/programas', icon: Activity },
+    { label: 'Dashboard Comparativo', href: '/gestor/comparativo', icon: BarChart3 },
+    { label: 'Relatórios & Auditoria', href: '/gestor/relatorios', icon: FileSpreadsheet },
+  ]
+
   const gestorVenartNav: NavItem[] = [
     { label: 'Visão Geral (Venart)', href: '/gestor', icon: LayoutDashboard },
     { label: 'Importar Lotes', href: '/gestor/importar', icon: Upload },
     { label: 'Catálogo CID-10', href: '/gestor/cid10', icon: Stethoscope },
     { label: 'Selecionar Elegíveis', href: '/gestor/selecionar', icon: CheckSquare },
     { label: 'Beneficiários', href: '/gestor/beneficiarios', icon: Users },
-    { label: 'Gestão de Usuários', href: '/gestor/usuarios', icon: UserCheck },
     { label: 'Gestão de Questionários', href: '/gestor/questionarios', icon: ClipboardList },
     { label: 'Fichas de Cuidado', href: '/gestor/fichas', icon: FileText },
     { label: 'Planos de Ação', href: '/gestor/planos-acao', icon: Target },
@@ -93,7 +107,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   ]
 
   let navItems: NavItem[] = []
-  if (perfil === 'GESTOR_VENART') navItems = gestorVenartNav
+  if (perfil === 'SUPERUSUARIO') navItems = superUsuarioNav
+  else if (perfil === 'GESTOR_VENART') navItems = gestorVenartNav
   else if (perfil === 'GESTOR_PROGRAMA') navItems = gestorProgramaNav
   else if (perfil === 'GESTOR_RH') navItems = gestorRhNav
   else if (perfil === 'OPERACAO') navItems = operacaoNav
@@ -106,6 +121,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const getPerfilBadgeClass = (p?: UserPerfil | null) => {
     switch (p) {
+      case 'SUPERUSUARIO':
+        return 'bg-amber-950 text-amber-300 border-amber-800'
       case 'GESTOR_VENART':
         return 'bg-purple-950 text-purple-300 border-purple-800'
       case 'GESTOR_PROGRAMA':

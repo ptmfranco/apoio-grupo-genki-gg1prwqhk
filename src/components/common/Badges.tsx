@@ -4,6 +4,18 @@ import { ShieldAlert, ShieldCheck, Shield } from 'lucide-react'
 import { UserPerfil } from '@/types/saude'
 
 export function LgpdBadge({ perfil }: { perfil: UserPerfil | string }) {
+  if (perfil === 'SUPERUSUARIO') {
+    return (
+      <Badge
+        variant="outline"
+        className="bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800 flex items-center gap-1 font-semibold"
+      >
+        <ShieldCheck className="w-3.5 h-3.5" />
+        Super Usuário (Administrador do Sistema)
+      </Badge>
+    )
+  }
+
   if (perfil === 'GESTOR_PROGRAMA') {
     return (
       <Badge

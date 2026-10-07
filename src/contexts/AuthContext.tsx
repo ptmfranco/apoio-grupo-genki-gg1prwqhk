@@ -34,20 +34,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const mapModelToUser = (model: any): User => {
-    // Normalizar perfis legados para os novos 4 perfis
+    // PocketBase pode retornar select como string ou array de strings
+    const rawPerfil = Array.isArray(model.perfil) ? model.perfil[0] : model.perfil
+
     let resolvedPerfil: UserPerfil = 'GESTOR_VENART'
     if (
-      model.perfil === 'GESTOR_VENART' ||
-      model.perfil === 'GESTOR_PROGRAMA' ||
-      model.perfil === 'GESTOR_RH' ||
-      model.perfil === 'OPERACAO'
+      rawPerfil === 'SUPERUSUARIO' ||
+      rawPerfil === 'GESTOR_VENART' ||
+      rawPerfil === 'GESTOR_PROGRAMA' ||
+      rawPerfil === 'GESTOR_RH' ||
+      rawPerfil === 'OPERACAO'
     ) {
-      resolvedPerfil = model.perfil
-    } else if (model.perfil === 'GESTOR') {
+      resolvedPerfil = rawPerfil
+    } else if (rawPerfil === 'GESTOR') {
       resolvedPerfil = 'GESTOR_VENART'
-    } else if (model.perfil === 'RH') {
+    } else if (rawPerfil === 'RH') {
       resolvedPerfil = 'GESTOR_RH'
-    } else if (model.perfil === 'ATENDENTE') {
+    } else if (rawPerfil === 'ATENDENTE') {
       resolvedPerfil = 'OPERACAO'
     }
 

@@ -150,7 +150,7 @@ export default function GestorUsuariosCrud() {
             Gestão de Usuários & Operadores
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Controle de perfis RBAC (Gestores, RH e Atendentes de Saúde)
+            Exclusivo do Super Usuário — Criação e administração de credenciais de acesso
           </p>
         </div>
         <Button
@@ -201,16 +201,20 @@ export default function GestorUsuariosCrud() {
                     <td className="p-3.5">
                       <span
                         className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                          u.perfil === 'GESTOR_VENART'
-                            ? 'bg-purple-100 text-purple-800 border border-purple-300'
-                            : u.perfil === 'GESTOR_PROGRAMA'
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                              : u.perfil === 'GESTOR_RH'
-                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                                : 'bg-teal-100 text-teal-800 border border-teal-300'
+                          u.perfil === 'SUPERUSUARIO'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-400 font-extrabold'
+                            : u.perfil === 'GESTOR_VENART'
+                              ? 'bg-purple-100 text-purple-800 border border-purple-300'
+                              : u.perfil === 'GESTOR_PROGRAMA'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : u.perfil === 'GESTOR_RH'
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                  : 'bg-teal-100 text-teal-800 border border-teal-300'
                         }`}
                       >
-                        {u.perfil || 'GESTOR_VENART'}
+                        {u.perfil === 'SUPERUSUARIO'
+                          ? 'SUPER USUÁRIO'
+                          : u.perfil || 'GESTOR_VENART'}
                       </span>
                     </td>
                     <td className="p-3.5 text-xs text-slate-700 font-medium">
@@ -340,7 +344,12 @@ export default function GestorUsuariosCrud() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="GESTOR_VENART">GESTOR_VENART (Administrador)</SelectItem>
+                    <SelectItem value="SUPERUSUARIO">
+                      SUPERUSUARIO (Super Usuário Exclusivo)
+                    </SelectItem>
+                    <SelectItem value="GESTOR_VENART">
+                      GESTOR_VENART (Gestor Geral VenArt)
+                    </SelectItem>
                     <SelectItem value="GESTOR_PROGRAMA">GESTOR_PROGRAMA (Médico)</SelectItem>
                     <SelectItem value="GESTOR_RH">GESTOR_RH (Recursos Humanos)</SelectItem>
                     <SelectItem value="OPERACAO">OPERACAO (Atendente/Enfermeiro)</SelectItem>

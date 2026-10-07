@@ -22,6 +22,12 @@ let lgpdConfigPromise: Promise<Record<string, boolean>> | null = null
 
 // Regras padrão caso a coleção ainda esteja sendo carregada
 const defaultLgpdRules: Record<string, Record<CampoLgpd, boolean>> = {
+  SUPERUSUARIO: {
+    nome: false,
+    condicao_principal: true,
+    risco: true,
+    custo_12m: true,
+  },
   GESTOR_PROGRAMA: {
     nome: false,
     condicao_principal: true,
@@ -362,9 +368,11 @@ export const UsuariosService = {
 
   async create(data: Partial<User> & { password?: string }): Promise<User> {
     const rawPerfil = data.perfil || 'OPERACAO'
-    // Mapear perfis legados se existirem
+    // Mapear perfis legados e suportar SUPERUSUARIO
     let normalizedPerfil: UserPerfil = 'OPERACAO'
-    if (rawPerfil === 'GESTOR' || rawPerfil === 'GESTOR_VENART') normalizedPerfil = 'GESTOR_VENART'
+    if (rawPerfil === 'SUPERUSUARIO') normalizedPerfil = 'SUPERUSUARIO'
+    else if (rawPerfil === 'GESTOR' || rawPerfil === 'GESTOR_VENART')
+      normalizedPerfil = 'GESTOR_VENART'
     else if (rawPerfil === 'GESTOR_PROGRAMA') normalizedPerfil = 'GESTOR_PROGRAMA'
     else if (rawPerfil === 'RH' || rawPerfil === 'GESTOR_RH') normalizedPerfil = 'GESTOR_RH'
     else normalizedPerfil = 'OPERACAO'
@@ -414,7 +422,9 @@ export const UsuariosService = {
     if (data.email !== undefined) payload.email = data.email.trim().toLowerCase()
     if (data.perfil !== undefined) {
       const rawPerfil = data.perfil
-      if (rawPerfil === 'GESTOR' || rawPerfil === 'GESTOR_VENART') payload.perfil = 'GESTOR_VENART'
+      if (rawPerfil === 'SUPERUSUARIO') payload.perfil = 'SUPERUSUARIO'
+      else if (rawPerfil === 'GESTOR' || rawPerfil === 'GESTOR_VENART')
+        payload.perfil = 'GESTOR_VENART'
       else if (rawPerfil === 'GESTOR_PROGRAMA') payload.perfil = 'GESTOR_PROGRAMA'
       else if (rawPerfil === 'RH' || rawPerfil === 'GESTOR_RH') payload.perfil = 'GESTOR_RH'
       else payload.perfil = 'OPERACAO'

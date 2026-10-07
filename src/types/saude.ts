@@ -1,4 +1,5 @@
 export type UserPerfil =
+  | 'SUPERUSUARIO'
   | 'GESTOR_VENART'
   | 'GESTOR_PROGRAMA'
   | 'GESTOR_RH'

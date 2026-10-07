@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-06T21:07:30.582Z",
+  "generatedAt": "2026-10-07T14:46:05.359Z",
   "collections": [
     {
       "name": "users",
@@ -7,9 +7,9 @@
       "apiRules": {
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != '' || @request.auth.id = ''",
-        "update": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.perfil = 'GESTOR_VENART' || @request.auth.perfil = 'GESTOR_PROGRAMA' || @request.auth.perfil = 'GESTOR_RH' || @request.auth.perfil = 'OPERACAO' || id = @request.auth.id)",
-        "delete": "@request.auth.id != '' && @request.auth.role = 'admin'"
+        "create": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.perfil = 'SUPERUSUARIO')",
+        "update": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.perfil = 'SUPERUSUARIO' || id = @request.auth.id)",
+        "delete": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.perfil = 'SUPERUSUARIO')"
       },
       "fields": [
         {
@@ -57,7 +57,13 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["GESTOR_VENART", "GESTOR_PROGRAMA", "GESTOR_RH", "OPERACAO"]
+          "selectValues": [
+            "GESTOR_VENART",
+            "GESTOR_PROGRAMA",
+            "GESTOR_RH",
+            "OPERACAO",
+            "SUPERUSUARIO"
+          ]
         },
         {
           "name": "registro_profissional",
@@ -1654,7 +1660,13 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["GESTOR_VENART", "GESTOR_PROGRAMA", "GESTOR_RH", "OPERACAO"]
+          "selectValues": [
+            "GESTOR_VENART",
+            "GESTOR_PROGRAMA",
+            "GESTOR_RH",
+            "OPERACAO",
+            "SUPERUSUARIO"
+          ]
         }
       ],
       "indexes": []
@@ -1826,7 +1838,13 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["GESTOR_VENART", "GESTOR_PROGRAMA", "GESTOR_RH", "OPERACAO"]
+          "selectValues": [
+            "GESTOR_VENART",
+            "GESTOR_PROGRAMA",
+            "GESTOR_RH",
+            "OPERACAO",
+            "SUPERUSUARIO"
+          ]
         },
         {
           "name": "campo",

@@ -53,7 +53,9 @@ export async function getAtendentes(): Promise<User[]> {
 export async function createUsuario(data: Partial<User> & { password?: string }): Promise<User> {
   const rawPerfil = data.perfil || 'OPERACAO'
   let normalizedPerfil: UserPerfil = 'OPERACAO'
-  if (rawPerfil === 'GESTOR' || rawPerfil === 'GESTOR_VENART') normalizedPerfil = 'GESTOR_VENART'
+  if (rawPerfil === 'SUPERUSUARIO') normalizedPerfil = 'SUPERUSUARIO'
+  else if (rawPerfil === 'GESTOR' || rawPerfil === 'GESTOR_VENART')
+    normalizedPerfil = 'GESTOR_VENART'
   else if (rawPerfil === 'GESTOR_PROGRAMA') normalizedPerfil = 'GESTOR_PROGRAMA'
   else if (rawPerfil === 'RH' || rawPerfil === 'GESTOR_RH') normalizedPerfil = 'GESTOR_RH'
   else normalizedPerfil = 'OPERACAO'
@@ -95,7 +97,16 @@ export async function createUsuario(data: Partial<User> & { password?: string })
 }
 
 export async function updateUsuario(id: string, data: Partial<User>): Promise<User> {
-  const res = await pb.collection('users').update<User>(id, data)
+  const payload: any = { ...data }
+  if (data.perfil) {
+    if (data.perfil === 'SUPERUSUARIO') payload.perfil = 'SUPERUSUARIO'
+    else if (data.perfil === 'GESTOR' || data.perfil === 'GESTOR_VENART')
+      payload.perfil = 'GESTOR_VENART'
+    else if (data.perfil === 'GESTOR_PROGRAMA') payload.perfil = 'GESTOR_PROGRAMA'
+    else if (data.perfil === 'RH' || data.perfil === 'GESTOR_RH') payload.perfil = 'GESTOR_RH'
+    else payload.perfil = 'OPERACAO'
+  }
+  const res = await pb.collection('users').update<User>(id, payload)
   await logAcao('ATUALIZAR_USUARIO', 'users', id, false, data)
   return res
 }

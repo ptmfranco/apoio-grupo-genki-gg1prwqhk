@@ -372,6 +372,7 @@ export default function GestaoUsuarios() {
                   }
                   className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs font-medium"
                 >
+                  <option value="SUPERUSUARIO">SUPERUSUARIO (Super Usuário Exclusivo)</option>
                   <option value="GESTOR_VENART">GESTOR_VENART (Acesso Total & Governança)</option>
                   <option value="GESTOR_PROGRAMA">GESTOR_PROGRAMA (Médico)</option>
                   <option value="GESTOR_RH">GESTOR_RH (RH / Distribuição)</option>
