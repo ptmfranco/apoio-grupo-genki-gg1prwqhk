@@ -11,7 +11,7 @@ export function LgpdBadge({ perfil }: { perfil: UserPerfil | string }) {
         className="bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800 flex items-center gap-1 font-semibold"
       >
         <ShieldCheck className="w-3.5 h-3.5" />
-        Super Usuário (Administrador do Sistema)
+        Super Usuário (Acesso Total aos Dados / Nome Liberado)
       </Badge>
     )
   }
@@ -23,7 +23,7 @@ export function LgpdBadge({ perfil }: { perfil: UserPerfil | string }) {
         className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 flex items-center gap-1"
       >
         <ShieldCheck className="w-3.5 h-3.5" />
-        Gestor Programa (Nome Protegido / Dados Clínicos e Custo Ativos)
+        Gestor Programa (Acesso Total aos Dados / Nome Liberado)
       </Badge>
     )
   }
@@ -35,7 +35,7 @@ export function LgpdBadge({ perfil }: { perfil: UserPerfil | string }) {
         className="bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-800 flex items-center gap-1"
       >
         <ShieldCheck className="w-3.5 h-3.5" />
-        Gestor Venart (Nome Protegido / Dados Clínicos e Custo Ativos)
+        Gestor Venart (Acesso Total aos Dados / Nome Liberado)
       </Badge>
     )
   }

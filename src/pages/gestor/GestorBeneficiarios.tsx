@@ -344,37 +344,43 @@ export default function GestorBeneficiariosCrud() {
           </DialogHeader>
 
           <form onSubmit={handleSave} className="space-y-4 py-2">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               <div>
-                <Label className="text-xs font-semibold">Matrícula</Label>
+                <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center">
+                  <span>Matrícula</span> <span className="text-rose-500 ml-0.5">*</span>
+                </Label>
                 <Input
                   value={formData.matricula || ''}
                   onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
                   required
-                  className="text-xs mt-1"
+                  className="text-xs h-9 mt-1.5 focus-visible:ring-[#163A4D]"
                 />
               </div>
               <div className="sm:col-span-2">
-                <Label className="text-xs font-semibold">Nome Completo</Label>
+                <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center">
+                  <span>Nome Completo</span> <span className="text-rose-500 ml-0.5">*</span>
+                </Label>
                 <Input
                   value={formData.nome_beneficiario || ''}
                   onChange={(e) => setFormData({ ...formData, nome_beneficiario: e.target.value })}
                   required
-                  className="text-xs mt-1"
+                  className="text-xs h-9 mt-1.5 focus-visible:ring-[#163A4D]"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               <div>
-                <Label className="text-xs font-semibold">Tipo Vínculo</Label>
+                <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center">
+                  Tipo Vínculo
+                </Label>
                 <Select
                   value={formData.tipo_vinculo || 'TITULAR'}
                   onValueChange={(val) =>
                     setFormData({ ...formData, tipo_vinculo: val as TipoVinculo })
                   }
                 >
-                  <SelectTrigger className="text-xs mt-1">
+                  <SelectTrigger className="text-xs h-9 mt-1.5 focus:ring-[#163A4D]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -385,14 +391,16 @@ export default function GestorBeneficiariosCrud() {
               </div>
 
               <div>
-                <Label className="text-xs font-semibold">Faixa Etária</Label>
+                <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center">
+                  Faixa Etária
+                </Label>
                 <Select
                   value={normalizeFaixaId(formData.faixa || formData.faixa_etaria)}
                   onValueChange={(val) =>
                     setFormData({ ...formData, faixa: val, faixa_etaria: val })
                   }
                 >
-                  <SelectTrigger className="text-xs mt-1">
+                  <SelectTrigger className="text-xs h-9 mt-1.5 focus:ring-[#163A4D]">
                     <SelectValue placeholder="Selecione a faixa..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -406,20 +414,22 @@ export default function GestorBeneficiariosCrud() {
               </div>
 
               <div>
-                <Label className="text-xs font-semibold">Unidade / Região</Label>
+                <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center">
+                  Unidade / Região
+                </Label>
                 <Input
                   value={formData.unidade_regiao || ''}
                   onChange={(e) => setFormData({ ...formData, unidade_regiao: e.target.value })}
-                  className="text-xs mt-1"
+                  className="text-xs h-9 mt-1.5 focus-visible:ring-[#163A4D]"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               <div>
-                <Label className="text-xs font-semibold flex items-center justify-between">
-                  <span>
-                    Celular (WhatsApp) <span className="text-rose-500">*</span>
+                <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center justify-between">
+                  <span className="flex items-center">
+                    Celular (WhatsApp) <span className="text-rose-500 ml-0.5">*</span>
                   </span>
                   <span className="text-[10px] text-slate-400 font-normal">11 dígitos</span>
                 </Label>
@@ -433,7 +443,7 @@ export default function GestorBeneficiariosCrud() {
                   placeholder="(99) 9999-99999"
                   maxLength={15}
                   required
-                  className={`text-xs mt-1 ${phoneErrors.celular ? 'border-rose-500 focus-visible:ring-rose-500' : ''}`}
+                  className={`text-xs h-9 mt-1.5 focus-visible:ring-[#163A4D] ${phoneErrors.celular ? 'border-rose-500 focus-visible:ring-rose-500' : ''}`}
                 />
                 {phoneErrors.celular && (
                   <p className="text-[11px] text-rose-600 mt-1 leading-tight font-medium">
@@ -442,9 +452,9 @@ export default function GestorBeneficiariosCrud() {
                 )}
               </div>
               <div>
-                <Label className="text-xs font-semibold flex items-center justify-between">
-                  <span>
-                    Telefone de Contato <span className="text-rose-500">*</span>
+                <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center justify-between">
+                  <span className="flex items-center">
+                    Telefone de Contato <span className="text-rose-500 ml-0.5">*</span>
                   </span>
                   <span className="text-[10px] text-slate-400 font-normal">11 dígitos</span>
                 </Label>
@@ -459,7 +469,7 @@ export default function GestorBeneficiariosCrud() {
                   placeholder="(99) 9999-99999"
                   maxLength={15}
                   required
-                  className={`text-xs mt-1 ${phoneErrors.telefone ? 'border-rose-500 focus-visible:ring-rose-500' : ''}`}
+                  className={`text-xs h-9 mt-1.5 focus-visible:ring-[#163A4D] ${phoneErrors.telefone ? 'border-rose-500 focus-visible:ring-rose-500' : ''}`}
                 />
                 {phoneErrors.telefone && (
                   <p className="text-[11px] text-rose-600 mt-1 leading-tight font-medium">
@@ -468,43 +478,49 @@ export default function GestorBeneficiariosCrud() {
                 )}
               </div>
               <div>
-                <Label className="text-xs font-semibold">E-mail</Label>
+                <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center justify-between">
+                  <span>E-mail</span>
+                  <span className="text-[10px] text-slate-400 font-normal opacity-0 select-none">
+                    opcional
+                  </span>
+                </Label>
                 <Input
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="exemplo@email.com"
-                  className="text-xs mt-1"
+                  className="text-xs h-9 mt-1.5 focus-visible:ring-[#163A4D]"
                 />
               </div>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-lg border space-y-3">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+            <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800 space-y-3">
+              <span className="text-xs font-bold text-[#163A4D] dark:text-[#a5d2eb] uppercase tracking-wider block">
                 Dados Clínicos & Financeiros (Sensíveis LGPD)
               </span>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
                 <div>
-                  <Label className="text-xs font-semibold flex items-center gap-1">
+                  <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center gap-1">
                     Condição Principal (CID-10)
                   </Label>
-                  <div className="mt-1">
-                    <CidCombobox
-                      value={formData.condicao_principal || ''}
-                      onChange={(val) => setFormData({ ...formData, condicao_principal: val })}
-                      placeholder="Selecione o CID-10..."
-                    />
-                  </div>
+                  <CidCombobox
+                    value={formData.condicao_principal || ''}
+                    onChange={(val) => setFormData({ ...formData, condicao_principal: val })}
+                    placeholder="Selecione o CID-10..."
+                    className="mt-1.5"
+                  />
                 </div>
 
                 <div>
-                  <Label className="text-xs font-semibold">Classificação de Risco</Label>
+                  <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center">
+                    Classificação de Risco
+                  </Label>
                   <Select
                     value={formData.risco || 'MEDIO'}
                     onValueChange={(val) => setFormData({ ...formData, risco: val as NivelRisco })}
                   >
-                    <SelectTrigger className="text-xs mt-1">
+                    <SelectTrigger className="text-xs h-9 mt-1.5 focus:ring-[#163A4D]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -517,28 +533,32 @@ export default function GestorBeneficiariosCrud() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
                 <div>
-                  <Label className="text-xs font-semibold">Custo 12 Meses (R$)</Label>
+                  <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center">
+                    Custo 12 Meses (R$)
+                  </Label>
                   <Input
                     type="number"
                     value={formData.custo_12_meses || 0}
                     onChange={(e) =>
                       setFormData({ ...formData, custo_12_meses: parseFloat(e.target.value) || 0 })
                     }
-                    className="text-xs mt-1 font-mono"
+                    className="text-xs h-9 mt-1.5 font-mono focus-visible:ring-[#163A4D]"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-xs font-semibold">Status do Funil</Label>
+                  <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center">
+                    Status do Funil
+                  </Label>
                   <Select
                     value={formData.status || 'ELEGIVEL'}
                     onValueChange={(val) =>
                       setFormData({ ...formData, status: val as StatusBeneficiario })
                     }
                   >
-                    <SelectTrigger className="text-xs mt-1">
+                    <SelectTrigger className="text-xs h-9 mt-1.5 focus:ring-[#163A4D]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -552,14 +572,16 @@ export default function GestorBeneficiariosCrud() {
                 </div>
 
                 <div>
-                  <Label className="text-xs font-semibold">Atendente Responsável</Label>
+                  <Label className="text-xs font-semibold min-h-[1.25rem] flex items-center">
+                    Atendente Responsável
+                  </Label>
                   <Select
                     value={formData.atendente_id || 'NONE'}
                     onValueChange={(val) =>
                       setFormData({ ...formData, atendente_id: val === 'NONE' ? '' : val })
                     }
                   >
-                    <SelectTrigger className="text-xs mt-1">
+                    <SelectTrigger className="text-xs h-9 mt-1.5 focus:ring-[#163A4D]">
                       <SelectValue placeholder="Selecione..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -612,7 +634,7 @@ export default function GestorBeneficiariosCrud() {
               </Button>
               <Button
                 type="submit"
-                className="bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold"
+                className="bg-[#163A4D] hover:bg-[#122e3e] text-white text-xs font-semibold"
               >
                 Salvar Alterações
               </Button>

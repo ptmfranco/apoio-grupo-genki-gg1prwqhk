@@ -23,19 +23,19 @@ let lgpdConfigPromise: Promise<Record<string, boolean>> | null = null
 // Regras padrão caso a coleção ainda esteja sendo carregada
 const defaultLgpdRules: Record<string, Record<CampoLgpd, boolean>> = {
   SUPERUSUARIO: {
-    nome: false,
+    nome: true,
     condicao_principal: true,
     risco: true,
     custo_12m: true,
   },
   GESTOR_PROGRAMA: {
-    nome: false,
+    nome: true,
     condicao_principal: true,
     risco: true,
     custo_12m: true,
   },
   GESTOR_VENART: {
-    nome: false,
+    nome: true,
     condicao_principal: true,
     risco: true,
     custo_12m: true,
@@ -53,7 +53,7 @@ const defaultLgpdRules: Record<string, Record<CampoLgpd, boolean>> = {
     custo_12m: true,
   },
   GESTOR: {
-    nome: false,
+    nome: true,
     condicao_principal: true,
     risco: true,
     custo_12m: true,
@@ -180,12 +180,15 @@ export const BeneficiariosService = {
       perfil?: UserPerfil
     } = {},
   ) {
+    const authRecord = pb.authStore.record as unknown as User | null
+    const userLoggedPerfil = (authRecord?.perfil as UserPerfil) || 'OPERACAO'
+
     const {
       page = 1,
       perPage = 100,
       filter = '',
       sort = '-created',
-      perfil = 'GESTOR_VENART',
+      perfil = userLoggedPerfil,
     } = params
 
     // Assegurar carregamento de config LGPD
@@ -206,13 +209,16 @@ export const BeneficiariosService = {
     }
   },
 
-  async getById(id: string, perfil: UserPerfil = 'GESTOR_VENART'): Promise<Beneficiario> {
+  async getById(id: string, perfil?: UserPerfil): Promise<Beneficiario> {
+    const authRecord = pb.authStore.record as unknown as User | null
+    const effectivePerfil = perfil || (authRecord?.perfil as UserPerfil) || 'OPERACAO'
+
     const configMap = await fetchLgpdConfig()
     const record = await pb.collection('beneficiarios').getOne(id, {
       expand: 'titular_id,lote_id,atendente_id,selecionado_por,aprovado_por',
       requestKey: null,
     })
-    return applyLgpdFilter(record as unknown as Beneficiario, perfil, configMap)
+    return applyLgpdFilter(record as unknown as Beneficiario, effectivePerfil, configMap)
   },
 
   async create(data: Partial<Beneficiario>): Promise<Beneficiario> {

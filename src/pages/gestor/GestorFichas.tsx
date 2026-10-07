@@ -40,6 +40,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default function GestorFichasCrud() {
   const { user } = useAuth()
+  const perfilLogado = user?.perfil || 'GESTOR_VENART'
+  const temAcessoNominal =
+    perfilLogado === 'GESTOR_VENART' ||
+    perfilLogado === 'GESTOR_PROGRAMA' ||
+    perfilLogado === 'SUPERUSUARIO'
+
+  const getNomeExibicao = (beneficiario?: any) => {
+    if (!beneficiario) return 'Beneficiário'
+    if (temAcessoNominal) {
+      return (
+        beneficiario.nome_beneficiario ||
+        beneficiario.nome ||
+        (beneficiario.matricula ? `Beneficiário (${beneficiario.matricula})` : 'Beneficiário')
+      )
+    }
+    return beneficiario.matricula
+      ? `Beneficiário Protegido (${beneficiario.matricula})`
+      : 'Beneficiário Protegido'
+  }
+
   const [fichas, setFichas] = useState<FichaAtendimento[]>([])
   const [search, setSearch] = useState('')
   const [filtroFaixa, setFiltroFaixa] = useState<string>('TODAS')
@@ -195,10 +215,7 @@ export default function GestorFichasCrud() {
                     </td>
                     <td className="p-3.5">
                       <div className="font-medium text-slate-900">
-                        {f.expand?.beneficiario_id?.matricula
-                          ? `Beneficiário Protegido (${f.expand?.beneficiario_id?.matricula})`
-                          : f.expand?.beneficiario_id?.nome_beneficiario ||
-                            'Beneficiário Protegido'}
+                        {getNomeExibicao(f.expand?.beneficiario_id)}
                       </div>
                       <div className="text-xs text-slate-500">
                         {f.expand?.beneficiario_id?.matricula || ''}
@@ -283,11 +300,7 @@ export default function GestorFichasCrud() {
             <DialogTitle>Auditoria Clínica da Ficha de Atendimento</DialogTitle>
             <DialogDescription className="text-xs">
               {selectedFicha?.ficha_id} • Paciente:{' '}
-              {selectedFicha?.expand?.beneficiario_id?.matricula
-                ? `Beneficiário Protegido (${selectedFicha?.expand?.beneficiario_id?.matricula})`
-                : selectedFicha?.expand?.beneficiario_id?.nome_beneficiario ||
-                  'Beneficiário Protegido'}{' '}
-              • Faixa:{' '}
+              {getNomeExibicao(selectedFicha?.expand?.beneficiario_id)} • Faixa:{' '}
               {getFaixaLabel(
                 selectedFicha?.expand?.beneficiario_id?.faixa ||
                   selectedFicha?.expand?.beneficiario_id?.faixa_etaria,

@@ -651,15 +651,21 @@ export function aplicarFiltroLgpdBeneficiario(
   b: Beneficiario,
   perfil?: UserPerfil,
 ): Partial<Beneficiario> {
-  if (perfil === 'GESTOR_PROGRAMA' || perfil === 'GESTOR') {
+  // GESTOR_VENART, GESTOR_PROGRAMA e SUPERUSUARIO possuem acesso nominal irrestrito
+  if (
+    perfil === 'SUPERUSUARIO' ||
+    perfil === 'GESTOR_PROGRAMA' ||
+    perfil === 'GESTOR_VENART' ||
+    perfil === 'GESTOR'
+  ) {
     return b
   }
 
-  if (perfil === 'GESTOR_VENART' || perfil === 'GESTOR_RH' || perfil === 'RH') {
+  if (perfil === 'GESTOR_RH' || perfil === 'RH') {
     return {
       ...b,
-      nome: `Beneficiário (${b.matricula})`,
-      nome_beneficiario: `Beneficiário (${b.matricula})`,
+      nome: `Beneficiário Protegido (${b.matricula})`,
+      nome_beneficiario: `Beneficiário Protegido (${b.matricula})`,
     }
   }
 
@@ -667,8 +673,8 @@ export function aplicarFiltroLgpdBeneficiario(
     const { custo_12_meses, custo_12m, condicao_principal, risco, ...rest } = b as any
     return {
       ...rest,
-      nome: `Beneficiário (${b.matricula})`,
-      nome_beneficiario: `Beneficiário (${b.matricula})`,
+      nome: `Beneficiário Protegido (${b.matricula})`,
+      nome_beneficiario: `Beneficiário Protegido (${b.matricula})`,
     }
   }
 
