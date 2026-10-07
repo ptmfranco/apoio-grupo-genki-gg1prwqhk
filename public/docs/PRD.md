@@ -284,16 +284,16 @@ erDiagram
 
 O ambiente conta com 6 contas oficiais pré-configuradas para validação das permissões de cada perfil:
 
-| Nome do Usuário     | E-mail de Acesso                |    Perfil RBAC    | Tema  | Atribuição Principal no Sistema                                              |
-| :------------------ | :------------------------------ | :---------------: | :---: | :--------------------------------------------------------------------------- |
-| **Super Usuário**   | `superusuario@venart.com.br`    |  `SUPERUSUARIO`   | LIGHT | **Administrador Global:** Exclusivo na gestão de usuários e credenciais.     |
-| **Matheus Martins** | `matheus.martins@venart.com.br` |  `GESTOR_VENART`  | LIGHT | **Governança Venart:** Importação, Gestão Exclusiva de Questionários e ROI.  |
-| **Larissa Alquati** | `larissa.alquati@venart.com.br` |  `GESTOR_VENART`  | DARK  | **Governança Venart (Modo Escuro):** Triagem, parametrização e auditoria.    |
-| **Dr. Toshio Oba**  | `toshio.oba@venart.com.br`      | `GESTOR_PROGRAMA` | LIGHT | **Médico Gestor:** Auditoria clínica e aprovação de vidas (`APROVADO`).      |
-| **Raul Mazia**      | `raul.mazia@adama.com.br`       |    `GESTOR_RH`    | LIGHT | **Gestor de RH:** Distribuição balanceada de vidas aprovadas aos atendentes. |
-| **Ketlin Nazário**  | `ketlin.nazario@venart.com.br`  |    `OPERACAO`     | LIGHT | **Operação Assistencial:** Fila de cuidado, questionários clínicos e alta.   |
+| Nome do Usuário     | E-mail de Acesso            |    Perfil RBAC    | Tema  | Atribuição Principal no Sistema                                              |
+| :------------------ | :-------------------------- | :---------------: | :---: | :--------------------------------------------------------------------------- |
+| **Super Usuário**   | Definido pelo Super Usuário |  `SUPERUSUARIO`   | LIGHT | **Administrador Global:** Exclusivo na gestão de usuários e credenciais.     |
+| **Matheus Martins** | Definido pelo Super Usuário |  `GESTOR_VENART`  | LIGHT | **Governança Venart:** Importação, Gestão Exclusiva de Questionários e ROI.  |
+| **Larissa Alquati** | Definido pelo Super Usuário |  `GESTOR_VENART`  | DARK  | **Governança Venart (Modo Escuro):** Triagem, parametrização e auditoria.    |
+| **Dr. Toshio Oba**  | Definido pelo Super Usuário | `GESTOR_PROGRAMA` | LIGHT | **Médico Gestor:** Auditoria clínica e aprovação de vidas (`APROVADO`).      |
+| **Raul Mazia**      | Definido pelo Super Usuário |    `GESTOR_RH`    | LIGHT | **Gestor de RH:** Distribuição balanceada de vidas aprovadas aos atendentes. |
+| **Ketlin Nazário**  | Definido pelo Super Usuário |    `OPERACAO`     | LIGHT | **Operação Assistencial:** Fila de cuidado, questionários clínicos e alta.   |
 
-_Nota de Acesso para Homologação:_ A senha padrão homologada para as contas de teste é **`12345678`**.
+As credenciais de acesso são definidas exclusivamente pelo Super Usuário e não são documentadas neste arquivo.
 
 ---
 
