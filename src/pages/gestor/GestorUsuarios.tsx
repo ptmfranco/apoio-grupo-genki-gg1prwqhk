@@ -173,7 +173,7 @@ export default function GestorUsuariosCrud() {
         return
       }
       if (isEditingSelf && !oldPass) {
-        const msg = 'Ao alterar sua própria senha, informe sua senha atual (oldPassword).'
+        const msg = 'Ao alterar sua própria senha, informe sua senha atual.'
         setErrorMessage(msg)
         toast.error(msg)
         return
@@ -189,9 +189,10 @@ export default function GestorUsuariosCrud() {
         }
 
         // Montar payload limpo:
-        // NÃO enviar email caso não tenha mudado para não disparar validação de auth record
+        // Enviar o e-mail informado (ele é o login do usuário e deve persistir de fato)
         const payloadToUpdate: any = {
           name: formData.name?.trim(),
+          email: formData.email?.trim().toLowerCase(),
           perfil: formData.perfil,
           tipo_profissional: formData.tipo_profissional,
           categoria_profissional: formData.categoria_profissional,
@@ -199,12 +200,6 @@ export default function GestorUsuariosCrud() {
           unidade_regiao: formData.unidade_regiao?.trim(),
           tema_preferido: formData.tema_preferido,
           ativo: formData.ativo,
-        }
-
-        const newEmailClean = formData.email?.trim().toLowerCase()
-        const oldEmailClean = (editingItem.email || '').trim().toLowerCase()
-        if (newEmailClean && newEmailClean !== oldEmailClean) {
-          payloadToUpdate.email = newEmailClean
         }
 
         if (newPass) {

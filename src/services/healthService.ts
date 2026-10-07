@@ -99,6 +99,8 @@ export async function createUsuario(data: Partial<User> & { password?: string })
 export async function updateUsuario(
   id: string,
   data: Partial<User> & {
+    novaSenha?: string
+    confirmarSenha?: string
     password?: string
     passwordConfirm?: string
     oldPassword?: string
@@ -108,25 +110,27 @@ export async function updateUsuario(
   if (!cleanId) {
     throw new Error('ID do usuário não informado para atualização.')
   }
-  const payload: any = { ...data }
-  // Carregar dados atuais para limpar campos inalterados
+
+  // Carregar dados atuais para enviar apenas e-mail alterado e evitar conflitos
   let currentUserRecord: User | null = null
   try {
     currentUserRecord = await pb.collection('users').getOne<User>(cleanId)
-  } catch { /* intentionally ignored */ }
+  } catch {
+    /* intentionally ignored */
+  }
 
   const payload: Record<string, any> = {}
 
   if (data.name !== undefined) {
-    const trimmed = data.name.trim()
-    if (!currentUserRecord || currentUserRecord.name !== trimmed) {
-      payload.name = trimmed
-    }
+    payload.name = data.name.trim()
   }
 
   if (data.email !== undefined) {
     const trimmed = data.email.trim().toLowerCase()
-    if (trimmed && (!currentUserRecord || currentUserRecord.email.toLowerCase() !== trimmed)) {
+    if (
+      trimmed &&
+      (!currentUserRecord || (currentUserRecord.email || '').trim().toLowerCase() !== trimmed)
+    ) {
       payload.email = trimmed
     }
   }
@@ -139,58 +143,40 @@ export async function updateUsuario(
     else if (data.perfil === 'RH' || data.perfil === 'GESTOR_RH') norm = 'GESTOR_RH'
     else norm = 'OPERACAO'
 
-    if (!currentUserRecord || currentUserRecord.perfil !== norm) {
-      payload.perfil = norm
-    }
+    payload.perfil = norm
   }
 
   if (data.tema_preferido !== undefined) {
-    const val = data.tema_preferido === 'DARK' ? 'DARK' : 'LIGHT'
-    if (!currentUserRecord || currentUserRecord.tema_preferido !== val) {
-      payload.tema_preferido = val
-    }
+    payload.tema_preferido = data.tema_preferido === 'DARK' ? 'DARK' : 'LIGHT'
   }
 
   if (data.categoria_profissional !== undefined) {
     const cat = data.categoria_profissional
-    const norm = ['ENFERMEIRO', 'MEDICO', 'ADMINISTRATIVO'].includes(cat) ? cat : 'ADMINISTRATIVO'
-    if (!currentUserRecord || currentUserRecord.categoria_profissional !== norm) {
-      payload.categoria_profissional = norm
-    }
+    payload.categoria_profissional = ['ENFERMEIRO', 'MEDICO', 'ADMINISTRATIVO'].includes(cat)
+      ? cat
+      : 'ADMINISTRATIVO'
   }
 
   if (data.tipo_profissional !== undefined) {
-    const val =
+    payload.tipo_profissional =
       data.tipo_profissional === 'ENFERMEIRO' || data.tipo_profissional === 'MEDICO'
         ? data.tipo_profissional
         : ''
-    if (!currentUserRecord || (currentUserRecord.tipo_profissional || '') !== val) {
-      payload.tipo_profissional = val
-    }
   }
 
   if (data.registro_profissional !== undefined) {
-    const val = data.registro_profissional.trim()
-    if (!currentUserRecord || (currentUserRecord.registro_profissional || '') !== val) {
-      payload.registro_profissional = val
-    }
+    payload.registro_profissional = data.registro_profissional.trim()
   }
 
   if (data.unidade_regiao !== undefined) {
-    const val = data.unidade_regiao.trim()
-    if (!currentUserRecord || (currentUserRecord.unidade_regiao || '') !== val) {
-      payload.unidade_regiao = val
-    }
+    payload.unidade_regiao = data.unidade_regiao.trim()
   }
 
   if (data.ativo !== undefined) {
-    const val = Boolean(data.ativo)
-    if (!currentUserRecord || currentUserRecord.ativo !== val) {
-      payload.ativo = val
-    }
+    payload.ativo = Boolean(data.ativo)
   }
 
-  // Senhas opcionais
+  // Senhas opcionais: validar antes de enviar
   const newPass = (data.novaSenha || data.password || '').trim()
   const confPass = (data.confirmarSenha || data.passwordConfirm || '').trim()
 
@@ -205,72 +191,73 @@ export async function updateUsuario(
     payload.passwordConfirm = confPass || newPass
 
     const isSelf = pb.authStore.record?.id === cleanId
-    if (isSelf && data.oldPassword) {
+    if (isSelf && data.oldPassword && data.oldPassword.trim()) {
       payload.oldPassword = data.oldPassword.trim()
     }
   }
 
-  try {
-    const res = await pb.collection('users').update<User>(cleanId, payload)
-    await logAcao('ATUALIZAR_USUARIO', 'users', cleanId, false, {
-      ...payload,
-      password: payload.password ? '***' : undefined,
-    })
-    return res
-  } catch (err: any) {
-    const status = err?.status || err?.statusCode
-    if (status === 401) {
-      throw new Error('Sessão expirada. Faça login novamente.')
-    }
-    if (status === 403) {
-      throw new Error('Acesso negado. Apenas o Super Usuário tem permissão para gerenciar usuários.')
-    }
-    if (status === 404) {
-      throw new Error('Usuário não encontrado.')
-    }
-
-    const detail = err?.data?.data
-    if (detail && typeof detail === 'object') {
-      const msgs: string[] = []
-      for (const [k, v] of Object.entries(detail) as [string, any][]) {
-        let msg = v?.message || String(v)
-        if (msg.includes("Values don't match")) {
-          msg = 'Os valores não conferem.'
-        } else if (msg.includes('Cannot be blank')) {
-          msg = 'Campo obrigatório.'
-        }
-        if (k === 'email') msgs.push(`E-mail: ${msg}`)
-        else if (k === 'oldPassword') msgs.push(`Senha atual: ${msg}`)
-        else if (k === 'password') msgs.push(`Nova senha: ${msg}`)
-        else msgs.push(`${k}: ${msg}`)
-      }
-      if (msgs.length > 0) {
-        throw new Error(`Erro nos campos: ${msgs.join(', ')}`)
-      }
-    }
-
-    throw new Error(err?.message || 'Erro ao atualizar dados do usuário.')
-  } else {
-    delete payload.password
-    delete payload.passwordConfirm
-  }
-  if (data.oldPassword && data.oldPassword.trim() !== '') {
-    payload.oldPassword = data.oldPassword.trim()
-  } else {
-    delete payload.oldPassword
-  }
-
   let res: User
+  let finalErr: any = null
   try {
+    // Tenta primeiro o endpoint dedicado para SUPERUSUARIO / atualização segura
     res = await pb.send<User>(`/backend/v1/users/${encodeURIComponent(cleanId)}/update`, {
       method: 'POST',
       body: payload,
     })
   } catch (endpointErr: any) {
+    finalErr = endpointErr
     if (endpointErr?.status === 404) {
-      res = await pb.collection('users').update<User>(cleanId, payload)
-    } else {
-      throw endpointErr
+      try {
+        res = await pb.collection('users').update<User>(cleanId, payload)
+        finalErr = null
+      } catch (sdkErr: any) {
+        finalErr = sdkErr
+      }
+    }
+
+    if (finalErr) {
+      const status = finalErr?.status || finalErr?.statusCode
+      if (status === 401) {
+        throw new Error('Sua sessão expirou. Faça login novamente.')
+      }
+      if (status === 403) {
+        throw new Error(
+          'Acesso negado. Apenas o Super Usuário tem permissão para gerenciar usuários.',
+        )
+      }
+      if (status === 404) {
+        throw new Error('Usuário não encontrado.')
+      }
+      if (status === 409) {
+        throw new Error('O e-mail informado já está em uso por outro usuário.')
+      }
+
+      const detail = finalErr?.data?.data
+      if (detail && typeof detail === 'object') {
+        const msgs: string[] = []
+        for (const [k, v] of Object.entries(detail) as [string, any][]) {
+          let msg = v?.message || String(v)
+          if (msg.includes("Values don't match") || msg.includes('do not match')) {
+            msg = 'Os valores não conferem.'
+          } else if (msg.includes('Cannot be blank')) {
+            msg = 'Campo obrigatório.'
+          } else if (msg.includes('must be at least')) {
+            msg = 'Tamanho mínimo não atingido.'
+          }
+          if (k === 'email') msgs.push(`E-mail: ${msg}`)
+          else if (k === 'oldPassword') msgs.push(`Senha atual: ${msg}`)
+          else if (k === 'password') msgs.push(`Nova senha: ${msg}`)
+          else if (k === 'passwordConfirm') msgs.push(`Confirmação de senha: ${msg}`)
+          else msgs.push(`${k}: ${msg}`)
+        }
+        if (msgs.length > 0) {
+          throw new Error(`Erro nos campos: ${msgs.join(', ')}`)
+        }
+      }
+
+      throw new Error(
+        finalErr?.data?.message || finalErr?.message || 'Erro ao atualizar dados do usuário.',
+      )
     }
   }
 

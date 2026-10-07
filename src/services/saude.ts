@@ -418,6 +418,8 @@ export const UsuariosService = {
   async update(
     id: string,
     data: Partial<User> & {
+      novaSenha?: string
+      confirmarSenha?: string
       password?: string
       passwordConfirm?: string
       oldPassword?: string
@@ -428,12 +430,29 @@ export const UsuariosService = {
       throw new Error('ID do usuário não informado para atualização.')
     }
 
+    // Carregar usuário atual para verificar se o e-mail de fato mudou
+    let currentUserRecord: any = null
+    try {
+      currentUserRecord = await pb.collection('users').getOne(cleanId)
+    } catch {
+      /* intentionally ignored */
+    }
+
     const payload: Record<string, any> = {}
 
     if (data.name !== undefined) payload.name = data.name.trim()
-    if (data.email !== undefined && data.email.trim() !== '') {
-      payload.email = data.email.trim().toLowerCase()
+
+    if (data.email !== undefined) {
+      const trimmedEmail = data.email.trim().toLowerCase()
+      if (
+        trimmedEmail &&
+        (!currentUserRecord ||
+          (currentUserRecord.email || '').trim().toLowerCase() !== trimmedEmail)
+      ) {
+        payload.email = trimmedEmail
+      }
     }
+
     if (data.perfil !== undefined) {
       const rawPerfil = data.perfil
       if (rawPerfil === 'SUPERUSUARIO') payload.perfil = 'SUPERUSUARIO'
@@ -468,14 +487,23 @@ export const UsuariosService = {
       payload.ativo = Boolean(data.ativo)
     }
 
-    if (data.password && data.password.trim() !== '') {
-      payload.password = data.password.trim()
-      payload.passwordConfirm = data.passwordConfirm
-        ? data.passwordConfirm.trim()
-        : data.password.trim()
-    }
-    if (data.oldPassword && data.oldPassword.trim() !== '') {
-      payload.oldPassword = data.oldPassword.trim()
+    const newPass = (data.novaSenha || data.password || '').trim()
+    const confPass = (data.confirmarSenha || data.passwordConfirm || '').trim()
+
+    if (newPass) {
+      if (newPass.length < 8) {
+        throw new Error('A nova senha deve ter no mínimo 8 caracteres.')
+      }
+      if (confPass && newPass !== confPass) {
+        throw new Error('A confirmação da nova senha não confere.')
+      }
+      payload.password = newPass
+      payload.passwordConfirm = confPass || newPass
+
+      const isSelf = pb.authStore.record?.id === cleanId
+      if (isSelf && data.oldPassword && data.oldPassword.trim()) {
+        payload.oldPassword = data.oldPassword.trim()
+      }
     }
 
     // Usar o endpoint seguro customizado do Skip Cloud pb_hooks
@@ -501,7 +529,7 @@ export const UsuariosService = {
 
       const status = finalErr?.status || finalErr?.statusCode
       if (status === 401) {
-        throw new Error('Sessão expirada. Faça login novamente.')
+        throw new Error('Sua sessão expirou. Faça login novamente.')
       }
       if (status === 403) {
         throw new Error(
@@ -511,20 +539,26 @@ export const UsuariosService = {
       if (status === 404) {
         throw new Error('Usuário não encontrado.')
       }
+      if (status === 409) {
+        throw new Error('O e-mail informado já está em uso por outro usuário.')
+      }
 
       const detail = finalErr?.data?.data
       if (detail && typeof detail === 'object') {
         const msgs: string[] = []
         for (const [k, v] of Object.entries(detail) as [string, any][]) {
           let msg = v?.message || String(v)
-          if (msg.includes("Values don't match")) {
+          if (msg.includes("Values don't match") || msg.includes('do not match')) {
             msg = 'Os valores não conferem.'
           } else if (msg.includes('Cannot be blank')) {
             msg = 'Campo obrigatório.'
+          } else if (msg.includes('must be at least')) {
+            msg = 'Tamanho mínimo não atingido.'
           }
           if (k === 'email') msgs.push(`E-mail: ${msg}`)
           else if (k === 'oldPassword') msgs.push(`Senha atual: ${msg}`)
           else if (k === 'password') msgs.push(`Nova senha: ${msg}`)
+          else if (k === 'passwordConfirm') msgs.push(`Confirmação de senha: ${msg}`)
           else msgs.push(`${k}: ${msg}`)
         }
         if (msgs.length > 0) {
@@ -532,7 +566,9 @@ export const UsuariosService = {
         }
       }
 
-      throw new Error(finalErr?.message || 'Erro ao atualizar dados do usuário.')
+      throw new Error(
+        finalErr?.data?.message || finalErr?.message || 'Erro ao atualizar dados do usuário.',
+      )
     }
   },
 

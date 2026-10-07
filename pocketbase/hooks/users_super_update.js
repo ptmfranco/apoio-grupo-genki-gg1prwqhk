@@ -3,13 +3,13 @@
 /**
  * Hook para atualização e redefinição de credenciais de usuários pelo SUPERUSUARIO.
  *
- * No PocketBase, requisições de update na coleção 'users' (_pb_users_auth_)
+ * No PocketBase, requisições diretas de update na coleção 'users' (_pb_users_auth_)
  * exigem 'oldPassword' sempre que os campos 'email', 'password' ou 'passwordConfirm'
  * são enviados no corpo da requisição e o chamador não é um superuser nativo do PocketBase.
  * Como o SUPERUSUARIO do sistema é autenticado na coleção users (perfil = 'SUPERUSUARIO'),
  * interceptamos a requisição antes da validação nativa:
  * - Se for SUPERUSUARIO editando OUTRO usuário:
- *   aplica as alterações com privilégios elevados via $app.save (sem exigir oldPassword).
+ *   permite trocar e-mail e senha sem exigir oldPassword.
  * - Se o usuário estiver editando a si mesmo:
  *   mantém a exigência do PocketBase de oldPassword caso esteja alterando e-mail ou senha.
  * - Limpa campos vazios e e-mails inalterados para evitar erros espúrios de validação.
@@ -44,38 +44,26 @@ onRecordUpdateRequest((e) => {
   // 1. SUPERUSUARIO editando OUTRO usuário:
   // Permitir redefinição de e-mail e senha sem exigir oldPassword.
   if (isSuperUser && !isSelf) {
-    let needsManualSave = false
-
     if (hasNewPassword) {
       if (rawPassword.length < 8) {
         throw new BadRequestError('A nova senha deve ter no mínimo 8 caracteres.')
       }
       if (rawPasswordConfirm && rawPassword !== rawPasswordConfirm) {
-        throw new BadRequestError('A confirmação de senha não confere.')
+        throw new BadRequestError('A confirmação de nova senha não confere.')
       }
       targetRecord.setPassword(rawPassword)
-      needsManualSave = true
     }
 
     if (emailChanged) {
       targetRecord.setEmail(rawEmail)
-      needsManualSave = true
     }
 
-    // Se houve alteração de senha ou e-mail, salvar diretamente com $app
-    // e remover esses campos do body para não disparar a validação nativa de oldPassword
-    if (needsManualSave) {
-      // Salva diretamente o targetRecord com as novas credenciais
-      $app.save(targetRecord)
-    }
-
-    // Remove do body para que a continuidade do pipeline de update não tente validar oldPassword
+    // Remove do body para que a continuidade do pipeline de update nativo do PB
+    // não tente validar oldPassword nem acuse discrepância
     delete body.password
     delete body.passwordConfirm
     delete body.oldPassword
-    if (!emailChanged || needsManualSave) {
-      delete body.email
-    }
+    delete body.email
   } else {
     // 2. Edição de si mesmo ou outro usuário comum:
     // Se não informou nova senha, remover password/passwordConfirm vazios do body

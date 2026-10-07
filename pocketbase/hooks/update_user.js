@@ -69,10 +69,10 @@ routerAdd(
       targetRecord.set('ativo', Boolean(body.ativo))
     }
 
-    // 2. E-mail: apenas se mudou
+    // 2. E-mail: apenas se fornecido e válido
     if (body.email !== undefined) {
       const newEmail = String(body.email).trim().toLowerCase()
-      if (newEmail && newEmail !== targetRecord.email().toLowerCase()) {
+      if (newEmail && newEmail !== (targetRecord.email() || '').toLowerCase()) {
         targetRecord.setEmail(newEmail)
       }
     }
@@ -83,13 +83,13 @@ routerAdd(
       if (newPass.length < 8) {
         return e.json(400, {
           message: 'Validação falhou.',
-          data: { password: { message: 'A senha deve ter no mínimo 8 caracteres.' } },
+          data: { password: { message: 'A nova senha deve ter no mínimo 8 caracteres.' } },
         })
       }
       if (body.passwordConfirm !== undefined && String(body.passwordConfirm).trim() !== newPass) {
         return e.json(400, {
           message: 'Validação falhou.',
-          data: { passwordConfirm: { message: 'A confirmação de senha não confere.' } },
+          data: { passwordConfirm: { message: 'A confirmação de nova senha não confere.' } },
         })
       }
       // Se for o próprio usuário (não superusuário editando outro), exigir oldPassword

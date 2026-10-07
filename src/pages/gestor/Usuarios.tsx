@@ -153,17 +153,12 @@ export default function GestaoUsuarios() {
 
         const payloadToUpdate: any = {
           name: formData.name,
+          email: formData.email?.trim().toLowerCase(),
           perfil: formData.perfil,
           tipo_profissional: formData.tipo_profissional,
           registro_profissional: formData.registro_profissional,
           unidade_regiao: formData.unidade_regiao,
           ativo: formData.ativo,
-        }
-
-        const newEmailClean = formData.email?.trim().toLowerCase()
-        const oldEmailClean = (editingItem.email || '').trim().toLowerCase()
-        if (newEmailClean && newEmailClean !== oldEmailClean) {
-          payloadToUpdate.email = newEmailClean
         }
 
         if (newPass) {
@@ -385,11 +380,10 @@ export default function GestaoUsuarios() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs font-semibold">E-mail Corporativo</Label>
+                <Label className="text-xs font-semibold">E-mail (Login de Acesso)</Label>
                 <Input
                   type="email"
                   required
-                  disabled={!!editingItem}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="exemplo@saude.com"
