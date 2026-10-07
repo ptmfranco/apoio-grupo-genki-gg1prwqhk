@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { RiskBadge } from '@/components/common/RiskBadge'
+import { CidCombobox } from '@/components/common/CidCombobox'
 import { LgpdNotice } from '@/components/common/LgpdNotice'
 import {
   Dialog,
@@ -216,13 +217,11 @@ export default function ProgramasSaude() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs font-semibold">Nome do Programa / Linha de Cuidado</Label>
-                <Input
-                  required
+                <Label className="text-xs font-semibold">Condição Clínica / CID-10 Vinculado</Label>
+                <CidCombobox
                   value={formData.condicao_principal}
-                  onChange={(e) => setFormData({ ...formData, condicao_principal: e.target.value })}
-                  placeholder="Ex: Programa de Atenção ao Diabético e Hipertenso"
-                  className="text-xs"
+                  onChange={(val) => setFormData({ ...formData, condicao_principal: val })}
+                  placeholder="Selecione o CID-10 ou busque por código/descrição..."
                 />
               </div>
 

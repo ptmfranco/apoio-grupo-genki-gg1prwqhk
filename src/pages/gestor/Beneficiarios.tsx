@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { RiskBadge } from '@/components/common/RiskBadge'
+import { CidCombobox } from '@/components/common/CidCombobox'
 import { LgpdNotice } from '@/components/common/LgpdNotice'
 import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
 import {
@@ -479,12 +480,13 @@ export default function GestaoBeneficiarios() {
               </div>
 
               <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs font-semibold">Condição Principal / Diagnóstico</Label>
-                <Input
+                <Label className="text-xs font-semibold">
+                  Condição Principal / Diagnóstico (CID-10)
+                </Label>
+                <CidCombobox
                   value={formData.condicao_principal}
-                  onChange={(e) => setFormData({ ...formData, condicao_principal: e.target.value })}
-                  placeholder="Ex: Hipertensão Arterial Sistêmica e Obesidade"
-                  className="text-xs"
+                  onChange={(val) => setFormData({ ...formData, condicao_principal: val })}
+                  placeholder="Selecione o CID-10 ou busque por código/descrição..."
                 />
               </div>
 

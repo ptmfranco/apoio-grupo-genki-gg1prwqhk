@@ -54,6 +54,7 @@ import {
   FileQuestion,
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { CidCombobox } from '@/components/common/CidCombobox'
 
 // 10 Condições Clínicas Conhecidas no Sistema
 const CONDICOES_CONHECIDAS = [
@@ -751,18 +752,19 @@ export default function GestorQuestionariosCrud() {
             <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs font-semibold">Condição Principal de Saúde *</Label>
-                  <div className="relative mt-1">
-                    <Input
+                  <Label className="text-xs font-semibold">
+                    Condição Principal de Saúde (CID-10) *
+                  </Label>
+                  <div className="mt-1">
+                    <CidCombobox
                       value={condicaoPrincipal}
-                      onChange={(e) => setCondicaoPrincipal(e.target.value)}
-                      placeholder="Ex: Diabetes Mellitus"
+                      onChange={(val) => setCondicaoPrincipal(val)}
+                      placeholder="Selecione o CID-10 ou busque por código/descrição..."
                       required
-                      className="text-xs pr-8"
                     />
                   </div>
 
-                  {/* Sugestões das 10 condições conhecidas */}
+                  {/* Sugestões das condições pré-configuradas */}
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     <span className="text-[10px] text-slate-400 self-center mr-1">Sugestões:</span>
                     {CONDICOES_CONHECIDAS.map((c) => (
