@@ -29,6 +29,8 @@ import { RiskBadge } from '@/components/common/RiskBadge'
 import { toast } from 'sonner'
 import type { LoteSelecao } from '@/types'
 import { getFaixaLabel } from '@/constants/faixasEtarias'
+import { downloadModeloBeneficiariosXlsx } from '@/services/modeloPlanilhaService'
+import { Download } from 'lucide-react'
 
 // Mock de linhas para preview de planilha .xlsx/.csv
 const PREVIEW_MOCK_DATA = [
@@ -232,17 +234,27 @@ export default function ImportarPlanilha() {
             <label htmlFor="file-upload">
               <Button variant="outline" size="sm" className="cursor-pointer gap-2" asChild>
                 <span>
-                  <Upload className="w-4 h-4 text-primary" /> Escolher Arquivo do Computador
+                  <Upload className="w-4 h-4 text-primary" /> Escolher Arquivo
                 </span>
               </Button>
             </label>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                downloadModeloBeneficiariosXlsx('modelo-importacao-beneficiarios.xlsx')
+              }
+              className="text-xs font-semibold gap-1.5 shadow-sm border-[#D4A359]/60 text-[#163A4D] hover:bg-amber-50"
+            >
+              <Download className="w-4 h-4 text-[#D4A359]" /> Baixar Planilha Modelo
+            </Button>
             <Button
               variant="default"
               size="sm"
               onClick={handleSimulateSelectFile}
               className="bg-primary hover:bg-primary/90 text-xs font-semibold gap-1.5 shadow-sm"
             >
-              <Sparkles className="w-4 h-4" /> Carregar Planilha Exemplo BI
+              <Sparkles className="w-4 h-4" /> Carregar Exemplo Demo
             </Button>
           </div>
           {fileSelected && (

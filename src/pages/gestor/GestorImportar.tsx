@@ -23,10 +23,17 @@ import {
   FileText,
   ArrowRight,
   AlertTriangle,
+  Download,
+  HelpCircle,
+  Info,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { getFaixaLabel } from '@/constants/faixasEtarias'
+import { getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
 import { formatPhone, isValidPhone11, onlyDigits } from '@/lib/phoneMask'
+import {
+  downloadModeloBeneficiariosXlsx,
+  DADOS_EXEMPLO_MODELO,
+} from '@/services/modeloPlanilhaService'
 import * as XLSX from 'xlsx'
 
 export default function GestorImportarPage() {
@@ -41,60 +48,28 @@ export default function GestorImportarPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  // Amostra modelo com contatos de 11 dígitos formatados
-  const mockSpreadsheetRows: Array<Partial<Beneficiario>> = [
-    {
-      id_externo: `BENEF-IMP-${Math.floor(1000 + Math.random() * 9000)}`,
-      nome_beneficiario: 'Claudia Regina Duarte',
-      matricula: 'MAT-3001',
-      unidade_regiao: 'São Paulo - Matriz',
-      tipo_vinculo: 'TITULAR',
-      faixa: '06',
-      faixa_etaria: '06',
-      telefone: '(11) 3344-55660',
-      celular: '(11) 97788-99001',
-      email: 'claudia.duarte@empresa.com.br',
-      custo_12_meses: 14200,
-      condicao_principal: 'Hipertensão com Resistência Medicamentosa',
-      risco: 'ALTO' as NivelRisco,
+  // Amostra modelo com 10 registros padronizados (coerentes com a planilha modelo baixada)
+  const mockSpreadsheetRows: Array<Partial<Beneficiario>> = DADOS_EXEMPLO_MODELO.map((item, i) => {
+    const faixaId = normalizeFaixaId(item.faixa_etaria)
+    return {
+      id_externo: `BENEF-IMP-${Date.now().toString().slice(-4)}-${i + 1}`,
+      matricula: item.matricula,
+      nome_beneficiario: item.nome,
+      tipo_vinculo: item.vinculo,
+      unidade_regiao: item.unidade,
+      faixa: faixaId,
+      faixa_etaria: faixaId,
+      telefone: item.telefone,
+      celular: item.celular,
+      email: item.email || '',
+      custo_12_meses: item.custo_12m,
+      custo_12m: item.custo_12m,
+      condicao_principal: item.condicao_principal,
+      risco: item.risco as NivelRisco,
       permite_contato_whatsapp_sms: true,
       status: 'ELEGIVEL',
-    },
-    {
-      id_externo: `BENEF-IMP-${Math.floor(1000 + Math.random() * 9000)}`,
-      nome_beneficiario: 'Felipe Duarte (Dependente)',
-      matricula: 'MAT-3001-D1',
-      unidade_regiao: 'São Paulo - Matriz',
-      tipo_vinculo: 'DEPENDENTE',
-      faixa: '01',
-      faixa_etaria: '01',
-      telefone: '(11) 3344-55660',
-      celular: '(11) 97788-99001',
-      email: 'claudia.duarte@empresa.com.br',
-      custo_12_meses: 4600,
-      condicao_principal: 'Diabetes Mellitus Tipo 1 Infantil',
-      risco: 'CRITICO' as NivelRisco,
-      permite_contato_whatsapp_sms: true,
-      status: 'ELEGIVEL',
-    },
-    {
-      id_externo: `BENEF-IMP-${Math.floor(1000 + Math.random() * 9000)}`,
-      nome_beneficiario: 'Lucas Vasconcelos Ribeiro',
-      matricula: 'MAT-3002',
-      unidade_regiao: 'Curitiba - Fábrica',
-      tipo_vinculo: 'TITULAR',
-      faixa: '08',
-      faixa_etaria: '08',
-      telefone: '(41) 3456-11220',
-      celular: '(41) 98877-22334',
-      email: 'lucas.ribeiro@empresa.com.br',
-      custo_12_meses: 9800,
-      condicao_principal: 'Lombalgia Crônica com Incapacidade Funcional',
-      risco: 'MEDIO' as NivelRisco,
-      permite_contato_whatsapp_sms: true,
-      status: 'ELEGIVEL',
-    },
-  ]
+    }
+  })
 
   // Normalização e validação das linhas importadas
   const processAndValidateRows = (
@@ -165,16 +140,42 @@ export default function GestorImportarPage() {
       const rawBeneficiarios: Array<Partial<Beneficiario>> = json.map((r, i) => {
         const matricula = String(r.matricula || r.Matricula || r.MATRICULA || `MAT-${1000 + i}`)
         const nome = String(r.nome || r.Nome || r.nome_beneficiario || r['Nome Completo'] || '')
-        const vinculo = String(
-          r.vinculo || r.tipo_vinculo || 'TITULAR',
-        ).toUpperCase() as TipoVinculo
-        const unidade = String(r.unidade || r.unidade_regiao || 'Matriz')
-        const faixa = String(r.faixa || r.faixa_etaria || '05')
+        const rawVinculo = String(
+          r.vinculo || r.tipo_vinculo || r.Vínculo || r.Vinculo || 'TITULAR',
+        ).toUpperCase()
+        const vinculo: TipoVinculo = rawVinculo.includes('DEP') ? 'DEPENDENTE' : 'TITULAR'
+
+        const unidade = String(r.unidade || r.unidade_regiao || r.Unidade || 'Matriz')
+
+        // Normalização flexível de faixa etária ("01".."10" ou rótulos "34 a 38 anos")
+        const rawFaixa = String(
+          r.faixa || r.faixa_etaria || r.Faixa || r['Faixa Etária'] || r['Faixa Etaria'] || '05',
+        )
+        const faixa = normalizeFaixaId(rawFaixa)
+
         const tel = String(r.telefone || r.Telefone || r.fone || r.fixo || '')
         const cel = String(r.celular || r.Celular || r.whatsapp || r.WhatsApp || '')
-        const cond = String(r.condicao || r.condicao_principal || r.diagnostico || r.cid || '')
-        const riscoVal = String(r.risco || r.Risco || 'MEDIO').toUpperCase() as NivelRisco
-        const custo = parseFloat(r.custo || r.custo_12m || r.custo_12_meses || '0') || 0
+        const cond = String(
+          r.condicao ||
+            r.condicao_principal ||
+            r['Condição Principal'] ||
+            r['Condicao Principal'] ||
+            r.diagnostico ||
+            r.cid ||
+            '',
+        )
+
+        // Normalização de risco com fallback seguro
+        const rawRisco = String(r.risco || r.Risco || 'MEDIO')
+          .toUpperCase()
+          .trim()
+        const riscoVal: NivelRisco = ['BAIXO', 'MEDIO', 'ALTO', 'CRITICO'].includes(rawRisco)
+          ? (rawRisco as NivelRisco)
+          : 'MEDIO'
+
+        const custo =
+          parseFloat(r.custo || r.custo_12m || r.custo_12_meses || r['Custo 12m'] || '0') || 0
+        const email = String(r.email || r.Email || r['E-mail'] || '')
 
         return {
           id_externo: `BENEF-IMP-${Date.now().toString().slice(-4)}-${i + 1}`,
@@ -186,9 +187,11 @@ export default function GestorImportarPage() {
           faixa_etaria: faixa,
           telefone: tel,
           celular: cel,
+          email,
           condicao_principal: cond,
           risco: riscoVal,
           custo_12_meses: custo,
+          custo_12m: custo,
           status: 'ELEGIVEL',
           permite_contato_whatsapp_sms: true,
         }
@@ -204,12 +207,20 @@ export default function GestorImportarPage() {
   }
 
   const loadExampleSpreadsheet = () => {
-    setFileName('beneficiarios_cuidado_saude_lote_marco.xlsx')
+    setFileName('modelo-importacao-beneficiarios.xlsx (10 registros)')
     const { validRows, errors } = processAndValidateRows(mockSpreadsheetRows)
     setPreviewData(validRows)
     setValidationErrors(errors)
     setErrorMsg(null)
     setSuccessMsg(null)
+  }
+
+  const handleDownloadTemplate = () => {
+    try {
+      downloadModeloBeneficiariosXlsx('modelo-importacao-beneficiarios.xlsx')
+    } catch (err: any) {
+      setErrorMsg(`Erro ao gerar planilha modelo: ${err?.message || 'Falha no download'}`)
+    }
   }
 
   const handleProcessLote = async () => {
@@ -308,14 +319,54 @@ export default function GestorImportarPage() {
         </Alert>
       )}
 
+      {/* Box de Instruções e Download de Modelo */}
+      <Card className="border-[#D4A359]/40 bg-gradient-to-r from-amber-50/70 to-slate-50 border shadow-sm">
+        <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1 max-w-2xl">
+            <div className="flex items-center gap-2 text-[#163A4D] font-bold text-sm">
+              <HelpCircle className="w-4 h-4 text-[#D4A359]" />
+              <span>Precisa do modelo padrão para preenchimento?</span>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Baixe nossa <strong>planilha modelo oficial (.xlsx)</strong> com as colunas já
+              formatadas e <strong>10 registros de exemplo</strong> com matrículas, vínculos, faixas
+              etárias padronizadas, condições clínicas (CID-10), riscos e telefones no formato
+              obrigatório de 11 dígitos.
+            </p>
+          </div>
+          <Button
+            type="button"
+            onClick={handleDownloadTemplate}
+            className="bg-[#163A4D] hover:bg-[#163A4D]/90 text-white border border-[#D4A359]/30 text-xs font-semibold gap-2 shadow-sm shrink-0"
+          >
+            <Download className="w-4 h-4 text-[#D4A359]" />
+            Baixar Planilha Modelo (.xlsx)
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Upload Box */}
       <Card className="border-slate-200">
         <CardHeader>
-          <CardTitle className="text-lg">Carregar Arquivo .XLSX ou .CSV</CardTitle>
-          <CardDescription className="text-xs">
-            A planilha deve conter matrícula, nome, vínculo, unidade, contatos, custo 12m, risco e
-            condição clínica
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <CardTitle className="text-lg">Carregar Arquivo .XLSX ou .CSV</CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                A planilha deve conter matrícula, nome, vínculo, unidade, contatos (celular e
+                telefone obrigatórios com 11 dígitos), custo 12m, risco e condição clínica
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadTemplate}
+              className="text-xs text-slate-700 border-slate-300 hover:bg-slate-100 self-start sm:self-auto gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-[#163A4D]" />
+              Baixar Modelo
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-teal-500 transition-colors bg-slate-50/50">
@@ -329,7 +380,7 @@ export default function GestorImportarPage() {
               Formatos aceitos: Microsoft Excel (.xlsx, .xls) ou CSV (.csv)
             </p>
 
-            <div className="flex justify-center items-center gap-3">
+            <div className="flex flex-wrap justify-center items-center gap-3">
               <label htmlFor="file-upload">
                 <Input
                   id="file-upload"
@@ -355,9 +406,49 @@ export default function GestorImportarPage() {
                 className="text-slate-700"
               >
                 <FileSpreadsheet className="w-4 h-4 mr-1 text-teal-600" />
-                Carregar Planilha Modelo Demo
+                Carregar 10 Registros Modelo Demo
               </Button>
             </div>
+          </div>
+
+          {/* Dicas e Requisitos de Importação */}
+          <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1.5">
+            <div className="flex items-center gap-1.5 font-semibold text-slate-800">
+              <Info className="w-3.5 h-3.5 text-teal-600" />
+              <span>Regras importantes para a importação sem descartes:</span>
+            </div>
+            <ul className="list-disc list-inside space-y-0.5 pl-1 text-[11px] text-slate-600">
+              <li>
+                <strong>Telefones e WhatsApp são obrigatórios:</strong> ambos devem conter
+                exatamente 11 dígitos numéricos (DDD + 9 dígitos), ex:{' '}
+                <code className="bg-slate-200/70 px-1 py-0.5 rounded text-slate-800">
+                  (11) 98888-7777
+                </code>
+                .
+              </li>
+              <li>
+                <strong>Faixas Etárias:</strong> utilize uma das 10 faixas padronizadas (ex:{' '}
+                <code className="bg-slate-200/70 px-1 rounded text-slate-800">0 a 18 anos</code>,{' '}
+                <code className="bg-slate-200/70 px-1 rounded text-slate-800">34 a 38 anos</code>,
+                ...,{' '}
+                <code className="bg-slate-200/70 px-1 rounded text-slate-800">59 anos ou mais</code>
+                ) ou o código da faixa de{' '}
+                <code className="bg-slate-200/70 px-1 rounded text-slate-800">01</code> a{' '}
+                <code className="bg-slate-200/70 px-1 rounded text-slate-800">10</code>.
+              </li>
+              <li>
+                <strong>Vínculo:</strong> informe{' '}
+                <code className="bg-slate-200/70 px-1 rounded text-slate-800">TITULAR</code> ou{' '}
+                <code className="bg-slate-200/70 px-1 rounded text-slate-800">DEPENDENTE</code>.
+              </li>
+              <li>
+                <strong>Classificação de Risco:</strong> valores aceitos:{' '}
+                <code className="bg-slate-200/70 px-1 rounded text-slate-800">BAIXO</code>,{' '}
+                <code className="bg-slate-200/70 px-1 rounded text-slate-800">MEDIO</code>,{' '}
+                <code className="bg-slate-200/70 px-1 rounded text-slate-800">ALTO</code> ou{' '}
+                <code className="bg-slate-200/70 px-1 rounded text-slate-800">CRITICO</code>.
+              </li>
+            </ul>
           </div>
         </CardContent>
       </Card>
