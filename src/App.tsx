@@ -11,6 +11,7 @@ import Index from './pages/Index'
 import LoginPage from './pages/Login'
 import PesquisaPublicaPage from './pages/PesquisaPublica'
 import NotFound from './pages/NotFound'
+import DownloadPrdRedirect from './pages/DownloadPrdRedirect'
 
 // Módulo do Gestor (GESTOR_VENART, GESTOR_PROGRAMA)
 import GestorDashboard from './pages/gestor/GestorDashboard'
@@ -48,6 +49,7 @@ const App = () => (
           {/* Autenticação & Pesquisa Pública Sem Login */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/pesquisa/:token" element={<PesquisaPublicaPage />} />
+          <Route path="/download-prd" element={<DownloadPrdRedirect />} />
 
           {/* Rotas Protegidas do GESTOR e SUPERUSUARIO */}
           <Route
