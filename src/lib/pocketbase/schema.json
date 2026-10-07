@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-07T14:46:05.359Z",
+  "generatedAt": "2026-10-07T15:09:22.377Z",
   "collections": [
     {
       "name": "users",
@@ -7,9 +7,9 @@
       "apiRules": {
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.perfil = 'SUPERUSUARIO')",
-        "update": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.perfil = 'SUPERUSUARIO' || id = @request.auth.id)",
-        "delete": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.perfil = 'SUPERUSUARIO')"
+        "create": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.perfil ?= 'SUPERUSUARIO' || @request.auth.perfil ~ 'SUPERUSUARIO' || @request.auth.perfil = 'SUPERUSUARIO')",
+        "update": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.perfil ?= 'SUPERUSUARIO' || @request.auth.perfil ~ 'SUPERUSUARIO' || @request.auth.perfil = 'SUPERUSUARIO' || id = @request.auth.id)",
+        "delete": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.perfil ?= 'SUPERUSUARIO' || @request.auth.perfil ~ 'SUPERUSUARIO' || @request.auth.perfil = 'SUPERUSUARIO')"
       },
       "fields": [
         {

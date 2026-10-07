@@ -97,6 +97,10 @@ export async function createUsuario(data: Partial<User> & { password?: string })
 }
 
 export async function updateUsuario(id: string, data: Partial<User>): Promise<User> {
+  const cleanId = (id || '').trim()
+  if (!cleanId) {
+    throw new Error('ID do usuário não informado para atualização.')
+  }
   const payload: any = { ...data }
   if (data.perfil) {
     if (data.perfil === 'SUPERUSUARIO') payload.perfil = 'SUPERUSUARIO'
@@ -106,14 +110,18 @@ export async function updateUsuario(id: string, data: Partial<User>): Promise<Us
     else if (data.perfil === 'RH' || data.perfil === 'GESTOR_RH') payload.perfil = 'GESTOR_RH'
     else payload.perfil = 'OPERACAO'
   }
-  const res = await pb.collection('users').update<User>(id, payload)
-  await logAcao('ATUALIZAR_USUARIO', 'users', id, false, data)
+  const res = await pb.collection('users').update<User>(cleanId, payload)
+  await logAcao('ATUALIZAR_USUARIO', 'users', cleanId, false, data)
   return res
 }
 
 export async function toggleAtivoUsuario(id: string, ativoAtual: boolean): Promise<User> {
-  const res = await pb.collection('users').update<User>(id, { ativo: !ativoAtual })
-  await logAcao('ALTERAR_STATUS_USUARIO', 'users', id, false, { ativo: !ativoAtual })
+  const cleanId = (id || '').trim()
+  if (!cleanId) {
+    throw new Error('ID do usuário não informado para alteração de status.')
+  }
+  const res = await pb.collection('users').update<User>(cleanId, { ativo: !ativoAtual })
+  await logAcao('ALTERAR_STATUS_USUARIO', 'users', cleanId, false, { ativo: !ativoAtual })
   return res
 }
 

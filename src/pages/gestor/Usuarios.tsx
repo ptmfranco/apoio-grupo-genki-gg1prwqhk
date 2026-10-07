@@ -109,6 +109,9 @@ export default function GestaoUsuarios() {
     try {
       setSaving(true)
       if (editingItem) {
+        if (!editingItem.id) {
+          throw new Error('ID do usuário ausente para atualização.')
+        }
         await updateUsuario(editingItem.id, {
           name: formData.name,
           perfil: formData.perfil,

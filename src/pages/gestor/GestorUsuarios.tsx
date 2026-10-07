@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { UsuariosService } from '@/services/saude'
 import { User, UserPerfil, TipoProfissional } from '@/types/saude'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -21,9 +22,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Search, Plus, Edit, UserCheck, Shield, Stethoscope, Eye, EyeOff } from 'lucide-react'
+import { Search, Plus, Edit, Eye, EyeOff } from 'lucide-react'
+import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
+import pb from '@/lib/pocketbase/client'
 
 export default function GestorUsuariosCrud() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [usuarios, setUsuarios] = useState<User[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -46,11 +52,34 @@ export default function GestorUsuariosCrud() {
   const [savingUser, setSavingUser] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
+  const checkAuthOrRedirect = (): boolean => {
+    if (!pb.authStore.isValid || !pb.authStore.record) {
+      toast.error('Sessão expirada. Faça login novamente como Super Usuário.')
+      navigate('/login', {
+        state: {
+          from: location,
+          feedback: 'Sua sessão expirou. Por favor, faça login com a conta de Super Usuário.',
+        },
+        replace: true,
+      })
+      return false
+    }
+    return true
+  }
+
   const loadData = async () => {
+    if (!checkAuthOrRedirect()) return
     setLoading(true)
     try {
       const res = await UsuariosService.list()
       setUsuarios(res)
+    } catch (err: any) {
+      console.error('Erro ao listar usuários:', err)
+      const msg = getErrorMessage(err)
+      toast.error(msg)
+      if (err?.status === 401 || err?.status === 403) {
+        checkAuthOrRedirect()
+      }
     } finally {
       setLoading(false)
     }
@@ -81,9 +110,11 @@ export default function GestorUsuariosCrud() {
   const handleOpenEdit = (u: User) => {
     setEditingItem(u)
     setErrorMessage(null)
+    setShowPassword(false)
     setFormData({
-      name: u.name,
-      email: u.email,
+      name: u.name || '',
+      email: u.email || '',
+      password: '',
       perfil: u.perfil || 'GESTOR_VENART',
       tipo_profissional: u.tipo_profissional || 'ENFERMEIRO',
       categoria_profissional: u.categoria_profissional || 'ADMINISTRATIVO',
@@ -97,41 +128,54 @@ export default function GestorUsuariosCrud() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!checkAuthOrRedirect()) return
+
     setSavingUser(true)
     setErrorMessage(null)
     try {
       if (editingItem) {
+        if (!editingItem.id) {
+          throw new Error('Identificador do usuário ausente na edição.')
+        }
         await UsuariosService.update(editingItem.id, formData)
+        toast.success(`Usuário ${formData.name || ''} atualizado com sucesso!`)
       } else {
         await UsuariosService.create(formData)
+        toast.success(`Novo usuário ${formData.name || ''} criado com sucesso!`)
       }
       setDialogOpen(false)
       await loadData()
     } catch (err: any) {
       console.error('Erro ao gravar usuário:', err)
-      const detail = err?.data?.data
-      let extra = ''
-      if (detail && typeof detail === 'object') {
-        extra = Object.entries(detail)
-          .map(([k, v]: [string, any]) => `${k}: ${v?.message || JSON.stringify(v)}`)
-          .join(', ')
+      if (err?.status === 401) {
+        toast.error('Sua sessão expirou. Redirecionando ao login...')
+        navigate('/login', {
+          state: {
+            from: location,
+            feedback: 'Sessão expirada. Entre novamente para continuar a edição.',
+          },
+          replace: true,
+        })
+        return
       }
-      setErrorMessage(
-        extra
-          ? `Erro nos campos: ${extra}`
-          : err?.message || 'Falha ao salvar usuário no PocketBase.',
-      )
+      const friendlyMsg = getErrorMessage(err)
+      setErrorMessage(friendlyMsg)
+      toast.error(friendlyMsg)
     } finally {
       setSavingUser(false)
     }
   }
 
   const handleToggleAtivo = async (u: User) => {
+    if (!checkAuthOrRedirect()) return
     try {
       await UsuariosService.toggleAtivo(u.id, !u.ativo)
+      toast.success(u.ativo ? 'Usuário inativado!' : 'Usuário ativado com sucesso!')
       await loadData()
     } catch (err: any) {
-      alert('Erro ao alterar status: ' + (err?.message || 'Falha ao alterar status'))
+      console.error('Erro ao alternar status do usuário:', err)
+      const msg = getErrorMessage(err)
+      toast.error(msg)
     }
   }
 

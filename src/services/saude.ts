@@ -416,6 +416,11 @@ export const UsuariosService = {
   },
 
   async update(id: string, data: Partial<User> & { password?: string }): Promise<User> {
+    const cleanId = (id || '').trim()
+    if (!cleanId) {
+      throw new Error('ID do usuário não informado para atualização.')
+    }
+
     const payload: Record<string, any> = {}
 
     if (data.name !== undefined) payload.name = data.name.trim()
@@ -459,12 +464,16 @@ export const UsuariosService = {
       payload.passwordConfirm = data.password.trim()
     }
 
-    const record = await pb.collection('users').update(id, payload)
+    const record = await pb.collection('users').update(cleanId, payload)
     return record as unknown as User
   },
 
   async toggleAtivo(id: string, ativo: boolean): Promise<User> {
-    const record = await pb.collection('users').update(id, { ativo })
+    const cleanId = (id || '').trim()
+    if (!cleanId) {
+      throw new Error('ID do usuário não informado para alteração de status.')
+    }
+    const record = await pb.collection('users').update(cleanId, { ativo })
     return record as unknown as User
   },
 
