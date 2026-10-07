@@ -109,7 +109,7 @@ export default function GestaoUsuarios() {
     setShowOldPassword(false)
     setFormData({
       name: u.name,
-      email: u.email,
+      email: u.email || '',
       password: '',
       passwordConfirm: '',
       oldPassword: '',
@@ -120,6 +120,23 @@ export default function GestaoUsuarios() {
       ativo: u.ativo ?? true,
     })
     setModalOpen(true)
+
+    if (!u.email && u.id) {
+      pb.collection('users')
+        .getOne<User>(u.id)
+        .then((fresh) => {
+          if (fresh?.email) {
+            setFormData((prev) => ({
+              ...prev,
+              email: fresh.email,
+              name: prev.name || fresh.name || '',
+            }))
+          }
+        })
+        .catch((err) => {
+          console.warn('Não foi possível obter detalhes do usuário:', err)
+        })
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

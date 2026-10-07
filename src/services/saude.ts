@@ -444,14 +444,11 @@ export const UsuariosService = {
 
     if (data.email !== undefined) {
       const trimmedEmail = data.email.trim().toLowerCase()
-      if (
-        trimmedEmail &&
-        (!currentUserRecord ||
-          (currentUserRecord.email || '').trim().toLowerCase() !== trimmedEmail)
-      ) {
+      if (trimmedEmail) {
         payload.email = trimmedEmail
       }
     }
+    payload.emailVisibility = true
 
     if (data.perfil !== undefined) {
       const rawPerfil = data.perfil

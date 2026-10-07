@@ -127,13 +127,11 @@ export async function updateUsuario(
 
   if (data.email !== undefined) {
     const trimmed = data.email.trim().toLowerCase()
-    if (
-      trimmed &&
-      (!currentUserRecord || (currentUserRecord.email || '').trim().toLowerCase() !== trimmed)
-    ) {
+    if (trimmed) {
       payload.email = trimmed
     }
   }
+  payload.emailVisibility = true
 
   if (data.perfil !== undefined) {
     let norm: UserPerfil = 'OPERACAO'

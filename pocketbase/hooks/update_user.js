@@ -77,6 +77,9 @@ routerAdd(
       }
     }
 
+    // Sempre garantir visibilidade do e-mail para que a listagem de usuários exiba o valor
+    targetRecord.setEmailVisibility(true)
+
     // 3. Senha: se fornecida
     if (body.password !== undefined && String(body.password).trim() !== '') {
       const newPass = String(body.password).trim()

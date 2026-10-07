@@ -148,6 +148,24 @@ export default function GestorUsuariosCrud() {
       ativo: u.ativo ?? true,
     })
     setDialogOpen(true)
+
+    // Se o usuário clicado não veio com e-mail populado (ex.: cache/listagem prévia),
+    // busca o registro individual via getById para garantir que o formulário exiba o e-mail cadastrado
+    if (!u.email && u.id) {
+      UsuariosService.getById(u.id)
+        .then((fresh) => {
+          if (fresh?.email) {
+            setFormData((prev) => ({
+              ...prev,
+              email: fresh.email,
+              name: prev.name || fresh.name || '',
+            }))
+          }
+        })
+        .catch((err) => {
+          console.warn('Não foi possível obter detalhes atualizados do usuário:', err)
+        })
+    }
   }
 
   const handleSave = async (e: React.FormEvent) => {

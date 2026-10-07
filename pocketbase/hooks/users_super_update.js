@@ -57,6 +57,7 @@ onRecordUpdateRequest((e) => {
     if (emailChanged) {
       targetRecord.setEmail(rawEmail)
     }
+    targetRecord.setEmailVisibility(true)
 
     // Remove do body para que a continuidade do pipeline de update nativo do PB
     // não tente validar oldPassword nem acuse discrepância
