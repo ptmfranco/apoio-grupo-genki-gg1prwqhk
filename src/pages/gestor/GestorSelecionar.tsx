@@ -25,6 +25,7 @@ import { RiscoBadge, StatusBeneficiarioBadge } from '@/components/common/Badges'
 import { CheckSquare, Search, Filter, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { FAIXAS_ETARIAS, getFaixaLabel, normalizeFaixaId } from '@/constants/faixasEtarias'
+import { CidCombobox } from '@/components/common/CidCombobox'
 
 export default function GestorSelecionarPage() {
   const { user } = useAuth()
@@ -37,6 +38,7 @@ export default function GestorSelecionarPage() {
 
   // Filtros
   const [search, setSearch] = useState('')
+  const [condicaoFilter, setCondicaoFilter] = useState('')
   const [riscoFilter, setRiscoFilter] = useState('ALL')
   const [faixaFilter, setFaixaFilter] = useState('ALL')
   const [regiaoFilter, setRegiaoFilter] = useState('ALL')
@@ -70,12 +72,22 @@ export default function GestorSelecionarPage() {
       (b.condicao_principal || '').toLowerCase().includes(search.toLowerCase())
 
     const matchesRisco = riscoFilter === 'ALL' || b.risco === riscoFilter
+    const matchesCondicao =
+      !condicaoFilter.trim() ||
+      (b.condicao_principal || '').toLowerCase().includes(condicaoFilter.toLowerCase())
     const matchesFaixa =
       faixaFilter === 'ALL' || normalizeFaixaId(b.faixa || b.faixa_etaria) === faixaFilter
     const matchesRegiao = regiaoFilter === 'ALL' || regiaoVal.includes(regiaoFilter)
     const matchesStatus = statusFilter === 'ALL' || b.status === statusFilter
 
-    return matchesSearch && matchesRisco && matchesFaixa && matchesRegiao && matchesStatus
+    return (
+      matchesSearch &&
+      matchesCondicao &&
+      matchesRisco &&
+      matchesFaixa &&
+      matchesRegiao &&
+      matchesStatus
+    )
   })
 
   const toggleSelectAll = () => {
